@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>rat9-config — editor de macros</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<header>
+  <h1>rat9<span>-config</span></h1>
+  <nav>
+    <button class="tab active" data-tab="macro">Macros</button>
+    <button class="tab" data-tab="dpi">DPI</button>
+    <button class="tab" data-tab="raw">Perfil .pr0</button>
+  </nav>
+  <div class="status">
+    <span><i class="dot" id="dot"></i><span id="conn">conectando…</span></span>
+    <span>Perfil <b id="prof">—</b></span>
+    <span>Batería <b id="batt">—</b></span>
+  </div>
+</header>
+
+<!-- ============ EDITOR DE MACROS ============ -->
+<main id="tab-macro" class="tabpane">
+  <section class="col">
+    <h2>Macros</h2>
+    <div class="body">
+      <div class="row">
+        <button id="add">+ Nueva macro</button>
+        <button class="ghost" id="ren">Renombrar</button>
+        <button class="ghost danger" id="del">Eliminar</button>
+      </div>
+      <ul id="cmdlist" class="cmdlist"></ul>
+      <p class="hint">Selecciona una macro para editarla. Las acciones se ejecutan
+      de arriba abajo.</p>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>Acciones <span id="cmdname" class="muted"></span></h2>
+    <div class="body">
+      <div class="row blockbar">
+        <label>Bloque</label>
+        <select id="blk">
+          <option value="press">Al pulsar</option>
+          <option value="repeat">Mantener (bucle)</option>
+          <option value="release">Al soltar</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="closed">
+          Cerrado (completa siempre)</label>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <select id="kind">
+          <option value="key">Tecla</option>
+          <option value="mousebtn">Botón de ratón</option>
+          <option value="wheel">Rueda</option>
+          <option value="hotkey">Tecla multimedia</option>
+        </select>
+        <select id="target"></select>
+        <select id="state">
+          <option value="1">Pulsar</option>
+          <option value="0">Soltar</option>
+        </select>
+        <input id="delay" type="number" min="0" step="10" value="0" title="ms">
+        <button id="addact">+ Añadir</button>
+      </div>
+      <table id="acts">
+        <thead><tr><th>#</th><th>Tipo</th><th>Elemento</th><th>Estado</th>
+          <th>Espera</th><th></th></tr></thead>
+        <tbody><tr><td colspan="6" class="muted">Sin acciones.</td></tr></tbody>
+      </table>
+      <div class="msg" id="msg"></div>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>Asignar a botón</h2>
+    <div class="body">
+      <label class="lbl">Botón del R.A.T.9</label>
+      <select id="btn"></select>
+      <div class="btngrid" id="btngrid"></div>
+      <h3 class="sub">Perfil generado</h3>
+      <pre id="preview">(sin macros)</pre>
+      <div class="row">
+        <button id="regen">Regenerar</button>
+        <button class="ghost" id="copy">Copiar .pr0</button>
+        <button class="ghost" id="dl">Descargar</button>
+      </div>
+      <div class="note">
+        Enviar el perfil al ratón necesita <b>root</b> y no está verificado:
+        <code>sudo python3 -m rat9.cli send --file perfil.pr0</code>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ DPI ============ -->
+<main id="tab-dpi" class="tabpane hidden">
+  <section class="col">
+    <h2>DPI por perfil</h2>
+    <div class="body">
+      <table id="dpitable">
+        <thead><tr><th>Perfil</th><th>Eje X</th><th>Eje Y</th><th>Estado</th></tr></thead>
+        <tbody><tr><td colspan="4" class="muted">cargando…</td></tr></tbody>
+      </table>
+      <p class="hint">Valores de fábrica del R.A.T.9: 800 / 1600 / 3200 / 6400.
+      Cambiarlos requiere escritura en el ratón, aún sin verificar.</p>
+    </div>
+  </section>
+</main>
+
+<!-- ============ RAW ============ -->
+<main id="tab-raw" class="tabpane hidden">
+  <section class="col wide">
+    <h2>Perfil .pr0</h2>
+    <div class="body">
+      <div class="row" style="margin-bottom:12px">
+        <button id="toRaw">Ver generado</button>
+        <button class="ghost" id="fromRaw">Analizar texto</button>
+        <button class="ghost" id="schema">Ver esquema</button>
+      </div>
+      <textarea id="raw" spellcheck="false"></textarea>
+      <div class="kv">
+        <dt>Caracteres</dt><dd id="rc">—</dd>
+        <dt>Bytes UTF-16</dt><dd id="rb">—</dd>
+        <dt>Bloques de 16</dt><dd id="rk">—</dd>
+      </div>
+      <div class="msg" id="rawmsg"></div>
+    </div>
+  </section>
+</main>
+
+<script src="editor.js"></script>
+</body>
+</html>
