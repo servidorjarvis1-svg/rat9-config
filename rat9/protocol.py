@@ -22,10 +22,23 @@ ARQUITECTURA DE REGISTROS
         perfil 1 = 800    perfil 2 = 1600
         perfil 3 = 3200   perfil 4 = 6400
 
-    Escritura de DPI (deducida del driver de Windows, PENDIENTE de verificar):
-        URB 1: wValue = 0x1000*modo + 0x0100*eje + raw,  wIndex = 0x0115
-        URB 2: wValue = 0x0051,                            wIndex = 0x0112
-        Persistencia: wValue = 0x0051,                     wIndex = 0x0070
+ESCRITURA
+=========
+El driver de Windows (hid.sys, offsets 0x14d44 / 0x1FC34) despacha la escritura
+como mensajes de 5 bytes {cmd, w1:u16, w2:u16} dentro de un URB propietario
+propio {Length=0x88, Function=0x17}, que un filtro USB inferior (SaiUsb) los
+convierte en el transporte fisico. Por eso el vendor OUT directo (0x40) da PIPE:
+no es la via que usa el raton para esto.
+
+Parametros reconstruidos del driver (NO verificados en hardware):
+    escribir DPI por modo:  bRequest 0x91, wValue = 0x1000*m + 0x0100*eje + raw,
+                            wIndex = 0x0073
+    guardar en EEPROM:      bRequest 0x91, wValue = 0x0051, wIndex = 0x0070
+    reset a fabrica:        bRequest 0x91, wValue = 0x0000, wIndex = 0x0073
+    cambiar de perfil:      bRequest 0x91, wValue = modo << 12, wIndex = 0x0070
+
+Una hipotesis alternativa del analisis estatico (wValue = 0x100|raw, wIndex 0x90)
+se probo y NO responde en lectura, asi que se descarto.
 """
 from __future__ import annotations
 
@@ -50,10 +63,9 @@ AXIS_X, AXIS_Y = 1, 2
 N_MODES = 4
 DPI_MIN, DPI_MAX = 100, 6400
 
-# escritura de DPI (del driver de Windows; sin verificar en hardware)
-W_IDX_DPI = 0x0115
-W_IDX_COMMIT = 0x0112
-W_VAL_COMMIT = 0x0051
+# Escritura (del driver de Windows; NO verificada en hardware).
+# Nota: el raton rechaza el vendor OUT directo (0x40) con PIPE, asi que
+# set_dpi() probablemente no funcione tal cual. Ver docstring.
 W_IDX_SAVE = 0x0070
 W_VAL_SAVE = 0x0051
 
@@ -214,9 +226,9 @@ class Rat9:
         if not (DPI_MIN <= dpi <= DPI_MAX):
             raise Rat9Error(f"DPI fuera de rango: {dpi} (valido {DPI_MIN}-{DPI_MAX})")
         value = MODE_BITS * mode + AXIS_BITS * axis + dpi_encode(dpi)
-        self._write(REQ_WRITE, value, W_IDX_DPI)
+        self._write(REQ_WRITE, value, REG_DPI)
         if commit:
-            self._write(REQ_WRITE, W_VAL_COMMIT, W_IDX_COMMIT)
+            self._write(REQ_WRITE, W_VAL_SAVE, W_IDX_SAVE)
 
     def save(self) -> None:
         """Persiste la configuracion en la memoria del raton."""

@@ -48,12 +48,12 @@ def cmd_send(m):
           "desenchufa y enchufa.")
     with Rat9() as r:
         before = r.status()
-        print(f"  antes : perfil={before.profile} bateria={before.battery}")
+        print(f"  antes : perfil={before.mode} bateria={before.battery}")
         n = len(r.write_profile(xml))
         print(f"  enviado: {n} bloques de {REPORT_SIZE} bytes")
         time.sleep(0.5)
         after = r.status()
-        print(f"  despues: perfil={after.profile} bateria={after.battery}")
+        print(f"  despues: perfil={after.mode} bateria={after.battery}")
     print("\nSi el raton no responde, desconectalo y reconectalo.")
     print("El firmware no queda alterado: los bloques son de sesion.")
 
