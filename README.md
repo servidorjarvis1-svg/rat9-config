@@ -7,13 +7,14 @@ inversa del software oficial de Windows (Mad Catz Software 7.0.45.2).
 
 | Módulo | Estado |
 |---|---|
-| `rat9/protocol.py` | ✅ verificado contra hardware |
-| `rat9/schema.py` | ✅ esquema oficial extraído del software |
-| `rat9/cli.py` | ✅ funcionando (`status`, `scan`, `frames`, `send`) |
-| `rat9/server.py` | ✅ API + UI web operativa |
-| `rat9/web/index.html` | ✅ interfaz |
-| Editor visual de macros | ⏳ pendiente del análisis del catálogo de acciones |
-| Escribir DPI | ❌ no resuelto (ver abajo) |
+| `rat9/protocol.py` | ✅ verificado contra hardware (lectura DPI, batería, perfil) |
+| `rat9/schema.py` | ✅ esquema oficial + catálogo de macros + constructores |
+| `rat9/pr0.py` | ✅ parser y generador del formato `.pr0` (round-trip verificado) |
+| `rat9/cli.py` | ✅ `status`, `dpi`, `scan`, `frames`, `send` |
+| `rat9/server.py` | ✅ API + servidor de estáticos |
+| `rat9/web/` | ✅ editor visual de macros, panel de DPI, vista .pr0 |
+| Escribir DPI | ❌ documentado, sin verificar |
+| Enviar perfil al ratón | ❌ framing sin respaldo binario (ver abajo) |
 
 ## Protocolo (todo verificado contra el ratón)
 
@@ -34,11 +35,16 @@ el nodo `hidraw` huérfano y el driver `hid-saitek` no se re-enlaza solo.
 **Si el ratón deja de responder: desenchúfalo y enchúfalo.**
 El firmware nunca queda alterado: los bloques son de sesión.
 
-**Formato del perfil** (de `TorontoDevice.cs`, software original):
+**Índices** — los registros están indexados por campos de bits:
 ```
-00 00 00 01 | FF FF FF FF | 00 00 | <XML en UTF-16LE>
+wIndex = 0x1000 × modo (1-4) + 0x0100 × eje (X/Y) + base
 ```
-troceado en bloques de 16 bytes.
+con bases `0x73` (DPI), `0x74` (perfil activo), `0xBA` (batería).
+`DPI = byte1 × 25 + 25`. Valores de fábrica: 800 / 1600 / 3200 / 6400.
+
+**Formato del perfil** — no es XML. Es texto UTF-16LE con gramática de corchetes
+`[tag[=nombre] attr=valor [hijo]]`, atributos uint en hexadecimal de 8 dígitos
+(`0xXXXXXXXX`), y los valores por defecto no se escriben.
 
 ## Uso
 
@@ -54,10 +60,13 @@ python3 -m rat9.cli frames --xml '[profile …]'
 sudo python3 -m rat9.cli send --file perfiles/mi-perfil.pr0
 ```
 
-Interfaz web:
+Editor de macros:
 ```bash
-sudo python3 -m rat9.server 8766   # → http://127.0.0.1:8766/ui/
+sudo python3 -m rat9.server 8766
+# → http://127.0.0.1:8766/editor/editor.html
 ```
+Permite crear macros (teclas, botones, rueda, multimedia), organizarlas en bloques
+`press`/`repeat`/`release`, elegir modo abierto o cerrado, y generar el `.pr0`.
 
 ## Requisitos
 
