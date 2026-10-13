@@ -75,7 +75,19 @@ sudo pacman -S python-libusb1        # API usb1, NO pyusb
 
 ## Procedencia
 
-El software de Windows se recuperó de `archive.org` (item `software-x-64-fre-7-0-45-2`);
-el CDN de Mad Catz está muerto desde el cierre de la empresa en 2020.
-Descompilado con ILSpy (el userland es .NET 2.0; `Profiler_x64` es C++ nativo).
-El esquema de perfil es el recurso embebido `schema_sd.pr0` de `Saitek.Common.dll`.
+Ver **[PROVENANCE.md](PROVENANCE.md)** para el detalle completo de qué es nuestro y qué
+viene del software original de Mad Catz.
+
+En resumen: el software de Windows se recuperó de Internet Archive (el CDN de Mad Catz
+está muerto desde el cierre de la empresa en 2020) y se descompiló con ILSpy — el userland
+es .NET 2.0, `Profiler_x64` es C++ nativo. El esquema de perfil es el recurso embebido
+`schema_sd.pr0` de `Saitek.Common.dll`.
+
+El conocimiento previo viene de [MayeulC/Saitek](https://github.com/MayeulC/Saitek)
+(GPLv3), que documentó el protocolo de los R.A.T. Saitek. Su wiki avisaba que el
+`0738:1709` estaba sin confirmar — hemos confirmado que su protocolo de DPI **no aplica**
+a este hardware, y que el canal real de escritura es distinto.
+
+## Licencia
+
+GPL-3.0. Ver [LICENSE](LICENSE) y [PROVENANCE.md](PROVENANCE.md).
