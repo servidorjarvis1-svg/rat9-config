@@ -4,15 +4,27 @@ import argparse
 import sys
 import time
 
-from rat9.protocol import Rat9, Rat9Error, REPORT_SIZE
+from rat9.protocol import (Rat9, Rat9Error, REPORT_SIZE, AXIS_X, AXIS_Y,
+                            N_MODES, FACTORY_DPI)
 from rat9.schema import MINIMAL_PROFILE
 
 
 def cmd_status(m):
     with Rat9(claim=False) as r:
         s = r.status()
-        print(f"  Perfil activo : {s.profile}")
-        print(f"  Bateria       : {s.battery}%")
+        print(f"  Perfil activo : {s.mode}")
+        print(f"  Bateria       : {s.battery if s.battery is not None else '?'}%")
+
+
+def cmd_dpi(m):
+    with Rat9(claim=False) as r:
+        print(f"  {'Perfil':>7} {'Eje':>4} {'DPI':>7}   (fabrica: {FACTORY_DPI.get(int(m.mode), '?') if m.mode else '-'})")
+        for d in r.all_dpi():
+            mark = ""
+            if m.mode and d.mode == int(m.mode):
+                mark = "  <- activo"
+            print(f"  {d.mode:>7} {d.axis_name:>4} "
+                  f"{str(d.dpi) if d.dpi else '?':>7}{mark}")
 
 
 def cmd_frames(m):
@@ -68,6 +80,11 @@ def main():
 
     sub.add_parser("status", help="perfil y bateria").set_defaults(fn=cmd_status)
     sub.add_parser("scan", help="indices que responden (solo lectura)").set_defaults(fn=cmd_scan)
+
+    dp = sub.add_parser("dpi", help="DPI de los 4 perfiles (solo lectura)")
+    dp.add_argument("--mode", type=int, choices=range(1, N_MODES + 1),
+                    help="resalta el perfil activo")
+    dp.set_defaults(fn=cmd_dpi)
 
     f = sub.add_parser("frames", help="empaqueta un perfil sin escribir")
     f.add_argument("--xml", help="perfil en formato pr0")

@@ -71,6 +71,16 @@
          font-size: 12px; }
   .msg { margin-top: 12px; font-size: 13px; min-height: 20px; }
   .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px;
+       text-transform: uppercase; letter-spacing: .05em;
+       padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; border-bottom: 1px solid #20222e; }
+  tr:last-child td { border-bottom: 0; }
+  tr.active td { background: #1b2233; font-weight: 600; }
+  .tag { font-size: 11px; padding: 1px 7px; border-radius: 10px; }
+  .tag.changed { background: #3a2a10; color: var(--warn); }
+  .tag.factory { background: #1e2a24; color: var(--ok); }
 </style>
 </head>
 <body>
@@ -112,6 +122,21 @@
   </section>
 
   <section style="grid-column: 1 / -1">
+    <h2>DPI por perfil</h2>
+    <div class="body">
+      <table id="dpitable">
+        <thead><tr><th>Perfil</th><th>Eje X</th><th>Eje Y</th><th></th></tr></thead>
+        <tbody><tr><td colspan="4" style="color:var(--muted)">cargando…</td></tr></tbody>
+      </table>
+      <p style="color:var(--muted);font-size:12.5px;margin:14px 0 0">
+        Los cuatro perfiles del R.A.T.9 tienen su propio DPI. Cambiarlos requiere
+        <b>escritura</b> en el ratón (root), que aún no está verificada — por eso
+        aquí solo se leen.
+      </p>
+    </div>
+  </section>
+
+  <section style="grid-column: 1 / -1">
     <h2>Cómo escribir en el ratón</h2>
     <div class="body">
       <div class="note">
@@ -143,12 +168,14 @@ async function refresh() {
     if (s.connected) {
       $('dot').className = 'dot on';
       $('conn').textContent = 'RAT.9 conectado';
-      $('prof').textContent = s.profile ?? '—';
+      $('prof').textContent = s.mode ?? '—';
+      renderDpi(s);
       $('batt').textContent = s.battery != null ? s.battery + '%' : '—';
     } else {
       $('dot').className = 'dot off';
       $('conn').textContent = 'sin acceso (¿sin root?)';
       $('prof').textContent = $('batt').textContent = '—';
+      renderDpi({});
     }
   } catch {
     $('dot').className = 'dot off';
@@ -184,6 +211,28 @@ async function loadSchema() {
   msg('Esquema schema_sd.pr0 cargado.', 'ok');
 }
 function msg(t, c) { $('msg').textContent = t; $('msg').className = 'msg ' + c; }
+
+function renderDpi(s) {
+  const tb = document.querySelector('#dpitable tbody');
+  if (!s.dpi || !s.dpi.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">'
+      + 'sin acceso al ratón (¿sin root?)</td></tr>';
+    return;
+  }
+  const rows = {};
+  s.dpi.forEach(d => { (rows[d.mode] ||= { mode: d.mode })[d.axis] = d; });
+  tb.innerHTML = Object.values(rows).map(r => {
+    const x = r.X || {}, y = r.Y || {};
+    const chg = x.changed || y.changed;
+    const active = s.mode === r.mode;
+    return `<tr class="${active ? 'active' : ''}">
+      <td>${r.mode}${active ? ' ●' : ''}</td>
+      <td>${x.dpi ?? '—'}</td>
+      <td>${y.dpi ?? '—'}</td>
+      <td><span class="tag ${chg ? 'changed' : 'factory'}">`
+        + (chg ? 'modificado' : 'fábrica') + '</span></td></tr>`;
+  }).join('');
+}
 
 refresh();
 setInterval(refresh, 5000);

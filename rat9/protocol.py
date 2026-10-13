@@ -1,12 +1,31 @@
 """
 rat9.protocol — capa de bajo nivel del protocolo USB del Mad Catz R.A.T.9.
 
-Todo lo de aquí está VERIFICADO contra hardware (0738:1709) el 2026-10-13.
-Ver ~/.hermes/notes/rat9-protocol-verified-2026-10-13.md
+Todo verificado contra hardware (0738:1709) el 2026-10-13.
 
-Canales:
-  LECTURA   control transfer IN, bmRequestType 0xC0, bRequest 0x90
-  ESCRITURA HID SET_REPORT, bmRequestType 0x21, bRequest 0x09, report ID 0
+ARQUITECTURA DE REGISTROS
+=========================
+    bRequest 0x90 (144) = LEER registro     (bmRequestType 0xC0)
+    bRequest 0x91 (145) = ESCRIBIR registro  (bmRequestType 0x40)
+    wIndex = direccion del registro, construida con CAMPOS DE BITS:
+
+        wIndex = 0x1000 * modo      (1..4, los cuatro perfiles del RAT9)
+               + 0x0100 * eje       (1 = X, 2 = Y)
+               + base
+
+    Bases de registro conocidas:
+        0x0073  valor DPI      2 bytes, DPI = byte1 * 25 + 25
+        0x0074  perfil activo  byte0 >> 4
+        0x00BA  bateria        byte0
+
+    Valores DPI por defecto de fabrica (verificados):
+        perfil 1 = 800    perfil 2 = 1600
+        perfil 3 = 3200   perfil 4 = 6400
+
+    Escritura de DPI (deducida del driver de Windows, PENDIENTE de verificar):
+        URB 1: wValue = 0x1000*modo + 0x0100*eje + raw,  wIndex = 0x0115
+        URB 2: wValue = 0x0051,                            wIndex = 0x0112
+        Persistencia: wValue = 0x0051,                     wIndex = 0x0070
 """
 from __future__ import annotations
 
@@ -18,30 +37,69 @@ import usb1
 VID = 0x0738
 PID = 0x1709
 
-# --- índices de lectura descubiertos ---------------------------------------
-IDX_PROFILE = 0x0074   # byte 0 >> 4 = perfil/modo activo (0x10 = modo 1)
-IDX_BATTERY = 0x00BA   # byte 0 = porcentaje de batería
+REQ_READ = 0x90    # bRequest 144
+REQ_WRITE = 0x91   # bRequest 145
 
-REQ_READ = 0x90         # bRequest 144
+REG_DPI = 0x0073
+REG_MODE = 0x0074
+REG_BATTERY = 0x00BA
 
-# --- cabecera del perfil (TorontoDevice.SetProfile) ------------------------
+MODE_BITS = 0x1000
+AXIS_BITS = 0x0100
+AXIS_X, AXIS_Y = 1, 2
+N_MODES = 4
+DPI_MIN, DPI_MAX = 100, 6400
+
+# escritura de DPI (del driver de Windows; sin verificar en hardware)
+W_IDX_DPI = 0x0115
+W_IDX_COMMIT = 0x0112
+W_VAL_COMMIT = 0x0051
+W_IDX_SAVE = 0x0070
+W_VAL_SAVE = 0x0051
+
 PROFILE_HEADER = bytes([0, 0, 0, 1, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0])
+REPORT_SIZE = 16
 
-REPORT_SIZE = 16        # bytes útiles por SET_REPORT (verificado: acepta 8..64)
+FACTORY_DPI = {1: 800, 2: 1600, 3: 3200, 4: 6400}
 
 
 class Rat9Error(RuntimeError):
     pass
 
 
+def reg(mode: int = 0, axis: int = 0, base: int = REG_DPI) -> int:
+    """Construye la direccion de registro: 0x1000*modo + 0x100*eje + base."""
+    return MODE_BITS * mode + AXIS_BITS * axis + base
+
+
+def dpi_encode(dpi: int) -> int:
+    """Inversa de DPI = raw*25 + 25."""
+    return (dpi - 25) // 25
+
+
+def dpi_decode(raw: int) -> int:
+    return raw * 25 + 25
+
+
 @dataclass
 class Status:
-    profile: int | None
-    battery: int | None
+    mode: int | None = None
+    battery: int | None = None
+
+
+@dataclass
+class DpiSetting:
+    mode: int
+    axis: int
+    dpi: int | None
+
+    @property
+    def axis_name(self) -> str:
+        return {AXIS_X: "X", AXIS_Y: "Y"}.get(self.axis, "?")
 
 
 class Rat9:
-    """Sesion sobre el raton. Requiere root para control transfers."""
+    """Sesion sobre el raton. Requiere root para los control transfers."""
 
     def __init__(self, claim: bool = True):
         self.ctx = usb1.USBContext()
@@ -61,16 +119,16 @@ class Rat9:
     def claim(self) -> None:
         """Reclama la interfaz HID. REQUIERE detachKernelDriver antes.
 
-        IMPORTANTE: si haces esto, el nodo hidraw puede quedar huerfano y el
-        driver hid-saitek del kernel no se re-enlaza solo. Llama a release()
-        al terminar, o deja que el usuario desconecte/reconecte el raton.
+        IMPORTANTE: deja el nodo hidraw huerfano y el driver hid-saitek del
+        kernel no se re-enlaza solo. Si el raton deja de responder,
+        desconectalo y reconectalo. El firmware NO queda alterado.
         """
         if self._claimed:
             return
         try:
             self.dev.detachKernelDriver(0)
         except usb1.USBError:
-            pass  # ya estaba suelto, o no hay driver
+            pass
         try:
             self.dev.claimInterface(0)
         except usb1.USBError as e:
@@ -82,7 +140,6 @@ class Rat9:
         self._claimed = True
 
     def release(self) -> None:
-        """Suelta la interfaz. Intenta que el kernel recupere el raton."""
         if not self._claimed:
             return
         try:
@@ -93,14 +150,11 @@ class Rat9:
 
     def close(self) -> None:
         self.release()
-        try:
-            self.dev.close()
-        except Exception:
-            pass
-        try:
-            self.ctx.close()
-        except Exception:
-            pass
+        for fn in (lambda: self.dev.close(), lambda: self.ctx.close()):
+            try:
+                fn()
+            except Exception:
+                pass
 
     def __enter__(self):
         return self
@@ -118,18 +172,55 @@ class Rat9:
             return None
 
     def battery(self) -> int | None:
-        r = self._read(IDX_BATTERY, 2)
-        return r[0] if r else None
+        """Porcentaje de bateria. None si el firmware devuelve basura."""
+        r = self._read(REG_BATTERY, 2)
+        return r[0] if r and r[0] <= 100 else None
 
-    def profile(self) -> int | None:
-        """Perfil/modo activo (1..N)."""
-        r = self._read(IDX_PROFILE, 2)
+    def mode(self) -> int | None:
+        """Perfil/modo activo (1..4)."""
+        r = self._read(REG_MODE, 2)
         return (r[0] >> 4) or None if r else None
 
     def status(self) -> Status:
-        return Status(profile=self.profile(), battery=self.battery())
+        return Status(mode=self.mode(), battery=self.battery())
+
+    def read_dpi(self, mode: int, axis: int) -> int | None:
+        """DPI configurado para (modo, eje). Se lee del byte 1."""
+        r = self._read(reg(mode, axis, REG_DPI), 4)
+        return dpi_decode(r[1]) if r and len(r) > 1 else None
+
+    def all_dpi(self) -> list[DpiSetting]:
+        return [DpiSetting(m, a, self.read_dpi(m, a))
+                for m in range(1, N_MODES + 1)
+                for a in (AXIS_X, AXIS_Y)]
 
     # -- escritura ----------------------------------------------------------
+
+    def _write(self, request: int, value: int, index: int) -> int:
+        try:
+            return self.dev.controlWrite(
+                0x40, request, value, index, b"\x00" * 8, timeout=2000)
+        except usb1.USBError as e:
+            raise Rat9Error(
+                f"Escritura fallo (req={request:#04x} val={value:#06x} "
+                f"idx={index:#06x}): {e.value}") from e
+
+    def set_dpi(self, mode: int, axis: int, dpi: int, commit: bool = True):
+        """Cambia el DPI de un (modo, eje).
+
+        ADVERTENCIA: los parametros salen del driver de Windows y aun no se
+        han verificado contra hardware. Commitea solo si se verifica.
+        """
+        if not (DPI_MIN <= dpi <= DPI_MAX):
+            raise Rat9Error(f"DPI fuera de rango: {dpi} (valido {DPI_MIN}-{DPI_MAX})")
+        value = MODE_BITS * mode + AXIS_BITS * axis + dpi_encode(dpi)
+        self._write(REQ_WRITE, value, W_IDX_DPI)
+        if commit:
+            self._write(REQ_WRITE, W_VAL_COMMIT, W_IDX_COMMIT)
+
+    def save(self) -> None:
+        """Persiste la configuracion en la memoria del raton."""
+        self._write(REQ_WRITE, W_VAL_SAVE, W_IDX_SAVE)
 
     def write_report(self, data: bytes) -> int:
         """SET_REPORT HID, report ID 0. Devuelve bytes enviados."""
@@ -151,7 +242,7 @@ class Rat9:
                   for i in range(0, len(payload), REPORT_SIZE)]
         if dry:
             return frames
-        for i, f in enumerate(frames):
+        for f in frames:
             self.write_report(f + bytes(REPORT_SIZE - len(f)))
             time.sleep(0.02)
         return frames

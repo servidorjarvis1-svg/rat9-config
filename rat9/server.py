@@ -10,7 +10,8 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-from rat9.protocol import Rat9, Rat9Error, REPORT_SIZE
+from rat9.protocol import (Rat9, Rat9Error, REPORT_SIZE, AXIS_X, AXIS_Y,
+                            N_MODES, FACTORY_DPI)
 from rat9.schema import MINIMAL_PROFILE, SCHEMA_PR0, NODE_TYPES, XML_TAGS
 
 PROFILES_DIR = Path(__file__).parent.parent / "profiles"
@@ -23,10 +24,15 @@ def read_state() -> dict:
             s = r.status()
             return {
                 "connected": True,
-                "profile": s.profile,
-                # el firmware puede devolver basura (ej. 137 %): validar rango
-                "battery": s.battery if s.battery is not None and s.battery <= 100 else None,
-                "battery_raw": s.battery,
+                "mode": s.mode,
+                # battery() ya descarta valores corruptos del firmware
+                "battery": s.battery,
+                "dpi": [
+                    {"mode": d.mode, "axis": d.axis_name, "dpi": d.dpi,
+                     "factory": FACTORY_DPI[d.mode],
+                     "changed": d.dpi is not None and d.dpi != FACTORY_DPI[d.mode]}
+                    for d in r.all_dpi()
+                ],
             }
     except Rat9Error as e:
         return {"connected": False, "error": str(e)}
