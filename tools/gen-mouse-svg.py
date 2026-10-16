@@ -347,8 +347,6 @@ def anclajes() -> list[tuple[int, str, float, float]]:
     """Punto de anclaje de cada llamada, calculado sobre la geometria del dibujo."""
     ym = (PLATE_Y0 + PLATE_Y1) / 2
     centro_fl = lambda y: (left_edge(y) + flank_inner(y)) / 2      # noqa: E731
-    y_modo = [MODE_BTN[2] + (MODE_BTN[3] - MODE_BTN[2]) * (i + 0.5) / MODE_BTN[4]
-              for i in range(MODE_BTN[4])]
     t0, t1 = THUMB_WHEEL[3], THUMB_WHEEL[4]
     tm = (t0 + t1) / 2
     cy = {u: (y0 + y1) / 2 for _z, _l, u, y0, y1 in SIDE_CONTROLS}
