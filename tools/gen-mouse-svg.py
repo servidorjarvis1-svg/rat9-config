@@ -192,7 +192,6 @@ SVG_STYLE = """<style>
     --mg-guide:      #5c7691;
     --mg-badge-bg:   #0b0e14;
     --mg-badge-edge: #93a7c3;
-    --mg-shadow:     #000000;
   }
   .mouse-diagram .badge text {
     fill: var(--mg-ink); font-family: ui-monospace, monospace;
@@ -417,14 +416,7 @@ def build_svg() -> str:
     <stop offset="0%" stop-color="var(--mg-gap)"/>
     <stop offset="100%" stop-color="var(--mg-recess)"/>
   </linearGradient>
-  <filter id="f-sombra" x="-25%" y="-25%" width="150%" height="150%">
-    <feGaussianBlur stdDeviation="26"/>
-  </filter>
 </defs>
-
-<!-- suelo: da volumen al dibujo, que sin esto queda plano -->
-<ellipse cx="292" cy="418" rx="186" ry="322" fill="var(--mg-shadow)"
-         opacity=".34" filter="url(#f-sombra)"/>
 
 <!-- casco -->
 <path d="{shell}" fill="url(#g-shell)" stroke="#3a4761" stroke-width="1.6"/>

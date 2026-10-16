@@ -25,9 +25,17 @@ const Vistas = (() => {
   };
   const txt = (s) => document.createTextNode(s);
 
+  let _idx = 0;
+
+  /** Las secciones se numeran solas, como las llamadas del dibujo. */
+  function reiniciarIndices() { _idx = 0; }
+
   function sect(titulo, ...cuerpo) {
+    _idx += 1;
     return h('section', { cls: 'sect' },
-      h('div', { cls: 'sect__head' }, h('span', { cls: 'hud' }, titulo)),
+      h('div', { cls: 'sect__head' },
+        h('span', { cls: 'sect__idx' }, String(_idx).padStart(2, '0')),
+        h('span', { cls: 'hud' }, titulo)),
       ...cuerpo);
   }
 
@@ -93,10 +101,10 @@ const Vistas = (() => {
     const x = act.find((d) => d.axis === 'X');
     const y = act.find((d) => d.axis === 'Y');
     nodos.push(sect('Lectura en vivo',
-      h('div', { style: 'display:flex;justify-content:center;padding:2px 0 10px' },
-        displayDpi(x?.dpi ?? null)),
       fila('Eje X', x?.dpi != null ? x.dpi : vacio('desconocido')),
-      fila('Eje Y', y?.dpi != null ? y.dpi : vacio('desconocido'))));
+      fila('Eje Y', y?.dpi != null ? y.dpi : vacio('desconocido')),
+      h('p', { cls: 'hint', style: 'margin:10px 0 0' },
+        'El display del banco de arriba enseña el eje X del perfil activo.')));
 
     if (zonaSel) {
       nodos.push(sect('Zona seleccionada',
@@ -259,5 +267,6 @@ const Vistas = (() => {
             + 'hasta desenchufarlo.'))));
   }
 
-  return { panel, botones, dpi, macros, perfiles, pie };
+  return { panel, botones, dpi, macros, perfiles, pie,
+           displayDpi, reiniciarIndices };
 })();

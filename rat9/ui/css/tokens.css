@@ -33,8 +33,8 @@
   /* ── texto: 4 niveles, los 4 pasan AA normal sobre --bg-1 ── */
   --text-hi:   oklch(0.960 0.008 250);  /* titulares            ~13:1 */
   --text-body: oklch(0.885 0.015 250);  /* cuerpo               ~10:1 */
-  --text-mute: oklch(0.740 0.020 255);  /* etiquetas             ~6:1 */
-  --text-hint: oklch(0.652 0.022 255);  /* pistas, deshabilitado ~4.9:1 */
+  --text-mute: oklch(0.775 0.020 255);  /* etiquetas             ~7:1 */
+  --text-hint: oklch(0.700 0.022 255);  /* pistas, deshabilitado ~5.3:1 */
 
   /* ── acento azul: 3 pasos + translucido para el glow ── */
   --accent-400: oklch(0.790 0.150 246);  /* texto acentuado, hover */

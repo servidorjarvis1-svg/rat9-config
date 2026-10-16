@@ -66,20 +66,51 @@
 
   <!-- ── barra de estado ────────────────────────────────────────────────── -->
   <header class="head">
-    <h1>rat9<span style="color:var(--accent-500)">-config</span></h1>
-    <span class="sub" id="hwid">0738:1709</span>
-    <span class="spacer"></span>
-    <span class="dot dot--wait" id="dot" role="img" aria-label="estado"></span>
-    <span class="sub" id="conn">conectando…</span>
-    <span class="sub">· perfil <span id="mode">—</span></span>
-    <span class="sub">· batería <span id="battHead">—</span></span>
+    <div class="head__brand">
+      <h1>rat9<span>-config</span></h1>
+      <span class="head__hw">Mad Catz R.A.T.9 · 0738:1709</span>
+    </div>
+    <div class="head__chips">
+      <span class="chip">
+        <i class="dot dot--wait" id="dot" role="img" aria-label="estado"></i>
+        <span id="conn">conectando…</span>
+      </span>
+      <span class="chip">perfil <b id="mode">—</b></span>
+      <span class="chip chip--accent">batería <b id="battHead">—</b></span>
+    </div>
   </header>
 
-  <!-- ── lienzo: el ratón ───────────────────────────────────────────────── -->
+  <!-- ── banco del dispositivo ──────────────────────────────────────────── -->
   <main class="canvas">
-    <div class="device-frame" id="deviceFrame">
-      <p class="hint" id="deviceMsg">cargando diagrama…</p>
+    <div class="bench">
+      <span class="bench__mark bench__mark--tl"></span>
+      <span class="bench__mark bench__mark--tr"></span>
+      <span class="bench__mark bench__mark--bl"></span>
+      <span class="bench__mark bench__mark--br"></span>
+      <div class="bench__floor" aria-hidden="true"></div>
+
+      <div class="device-frame" id="deviceFrame">
+        <p class="hint" id="deviceMsg">cargando diagrama…</p>
+      </div>
+
+      <!-- la lectura del raton, en el sitio del display de LEDs del original -->
+      <div class="bench__readout">
+        <span class="hud">DPI del perfil activo</span>
+        <div class="bench__display">
+          <div class="dpiled" id="stageLed" role="img" aria-label="lectura de DPI"></div>
+          <span class="bench__unit">dpi</span>
+        </div>
+      </div>
+
+      <!-- cajetín del plano: solo hechos, nada inventado -->
+      <div class="bench__title">
+        <div><span class="hud">Dispositivo</span><b>Mad Catz R.A.T.9</b></div>
+        <div><span class="hud">Interfaz</span><b>USB 0738:1709</b></div>
+        <div><span class="hud">Vista</span><b>Planta</b></div>
+        <div><span class="hud">Estado</span><b id="titleEstado">—</b></div>
+      </div>
     </div>
+
     <ol class="numb" id="numb" aria-label="Controles del ratón por número"></ol>
   </main>
 

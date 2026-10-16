@@ -45,6 +45,12 @@ const App = (() => {
     $('#railFoot').textContent = conectado
       ? 'perfil ' + (estado.mode ?? '?') + ' · ' + bat
       : 'ratón no accesible';
+    const te = $('#titleEstado');
+    if (te) {
+      te.textContent = conectado
+        ? 'accesible · perfil ' + (estado.mode ?? '?')
+        : 'sin acceso';
+    }
   }
 
   /* ── vistas ───────────────────────────────────────────────────────────── */
@@ -58,8 +64,25 @@ const App = (() => {
   };
 
   function pintarVista() {
+    Vistas.reiniciarIndices();
     const nodos = (RENDER[vista] || RENDER.panel)();
     $('#panel').replaceChildren(...nodos, Vistas.pie());
+  }
+
+  /** El display de DPI del banco: el eje X del perfil activo. */
+  function pintarLectura() {
+    const cont = $('#stageLed');
+    if (!cont) return;
+    const act = (estado.dpi || []).filter((d) => d.mode === estado.mode);
+    const v = act.find((d) => d.axis === 'X')?.dpi ?? null;
+    const s = v == null ? '----' : String(v).padStart(4, ' ');
+    cont.replaceChildren(...[...s].map((ch) => {
+      const i = document.createElement('i');
+      if (ch.trim()) i.className = 'on';
+      i.textContent = ch;
+      return i;
+    }));
+    cont.setAttribute('aria-label', 'lectura de DPI ' + (v ?? 'desconocida'));
   }
 
   /** Cambia de seccion. */
@@ -84,6 +107,7 @@ const App = (() => {
     if (estado.battery != null) ultimaBateria = estado.battery;
     estado.batteryUltima = ultimaBateria;
     pintarCabecera();
+    pintarLectura();
     // solo se repinta la vista si el dato ha cambiado de verdad: repintar cada
     // 3 s sin motivo tiraria el foco del teclado y el scroll del panel
     const huella = JSON.stringify([estado.conectado, estado.mode,

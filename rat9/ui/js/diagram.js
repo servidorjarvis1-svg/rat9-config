@@ -60,6 +60,18 @@ const Diagram = (() => {
     svg.addEventListener('keydown', (e) => { if (e.key === 'Escape') seleccionar(null); });
 
     contenedor.replaceChildren(svg);
+    // Guarda contra el fallo mudo que ya nos comimos una vez: si el SVG acaba
+    // con tamano 0 (un choque de nombres de clase, una contencion, un
+    // porcentaje sin resolver) el raton simplemente NO APARECE y el navegador
+    // no dice nada. Mejor que se queje el.
+    requestAnimationFrame(() => {
+      const r = svg.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) {
+        console.error('el diagrama ha quedado en '
+          + `${Math.round(r.width)}x${Math.round(r.height)} px: no se vera. `
+          + 'Revisa el CSS del contenedor (tamano, contencion, clases repetidas).');
+      }
+    });
     emitir('cargado', null);
     return zonas;
   }

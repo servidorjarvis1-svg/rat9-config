@@ -79,21 +79,46 @@ body {
 
 .head {
   grid-area: head;
-  display: flex; align-items: center; gap: var(--sp-4);
-  padding-inline: var(--sp-4);
+  display: flex; align-items: center; gap: var(--sp-5);
+  padding-inline: var(--sp-5);
   background: var(--bg-1);
+  border-block-end: 1px solid var(--hairline);
 }
-
+.head__brand { display: flex; align-items: baseline; gap: var(--sp-3); }
+.head__hw {
+  font: 500 var(--step--2)/1 var(--font-mono);
+  color: var(--text-hint); letter-spacing: .07em; text-transform: uppercase;
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 1px solid var(--hairline);
+}
 .head h1 {
   margin: 0; font: 600 var(--step-1)/1 var(--font-display);
   color: var(--text-hi); letter-spacing: -.01em;
 }
-.head h1 b { color: var(--accent-500); font-weight: 600; }
-.head .sub {
-  font: 500 var(--step--1)/1 var(--font-mono);
-  color: var(--text-hint); letter-spacing: .06em;
+.head h1 span { color: var(--accent-500); font-weight: 500; }
+.head__chips {
+  margin-inline-start: auto;
+  display: flex; align-items: center; gap: var(--sp-2);
 }
-.head .spacer { margin-inline-start: auto; }
+
+/* Fichas de estado: cada dato con su etiqueta, en vez de una ristra de
+   "· perfil · bateria" donde no se sabia donde acababa un dato y empezaba
+   el siguiente. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 5px var(--sp-3);
+  background: var(--bg-2); border: 1px solid var(--hairline);
+  border-radius: var(--r-tech);
+  font: 500 var(--step--2)/1 var(--font-mono);
+  color: var(--text-mute); letter-spacing: .05em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.chip b {
+  color: var(--text-hi); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chip--accent { border-color: color-mix(in oklab, var(--accent-500) 45%, transparent); }
+.chip--accent b { color: var(--accent-400); }
 
 /* ═══ rail de navegacion ══════════════════════════════════════════════════ */
 
@@ -159,11 +184,94 @@ body {
   padding: var(--sp-5);
   background:
     radial-gradient(120% 70% at 50% 0%, oklch(0.205 0.020 258) 0%, var(--bg-0) 68%);
-  position: relative;
 }
 /* Sin sitio para la leyenda, se va: los numeros siguen teniendo su lista
    completa y accesible en la vista «Botones». */
 @media (max-width: 1180px) { .canvas { grid-template-columns: minmax(0, 1fr); } .numb { display: none; } }
+
+/* ── banco del dispositivo ─────────────────────────────────────────────────
+   El fallo de la version anterior estaba aqui: un raton FLOTANDO en una
+   rejilla vacia. Ahora se apoya en un suelo en perspectiva, va encuadrado por
+   marcas de esquina (lenguaje de plano tecnico) y lleva debajo su lectura de
+   DPI, igual que el display de 7 segmentos del software original. El lienzo
+   deja de ser decorado y pasa a ser el banco de un dispositivo.
+
+   Se llama .bench y NO .stage a proposito: .stage ya estaba cogido por la
+   tira de etapas de DPI, y al repetir el nombre la segunda definicion pisaba a
+   la primera. El sintoma era mudo: el raton media 0x0 y simplemente no
+   aparecia, sin un solo error en consola. */
+
+.bench {
+  position: relative;
+  isolation: isolate;
+  inline-size: 100%;
+  max-inline-size: 880px;
+  display: grid; align-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-5) var(--sp-3);
+}
+/* Charco de luz. Sin esto la sombra no se ve: una sombra oscura sobre un fondo
+   casi negro no tiene donde caer, y el objeto parece flotar por mucho
+   drop-shadow que le pongas. Primero la superficie iluminada, luego el objeto. */
+.bench::before {
+  content: ""; position: absolute; z-index: -2; pointer-events: none;
+  inset-block-start: 10%; inset-inline: 2%; block-size: 60%;
+  background: radial-gradient(52% 46% at 50% 56%,
+    oklch(0.42 0.028 258 / .9) 0%, oklch(0.30 0.022 258 / .55) 42%,
+    transparent 70%);
+}
+/* Retícula PLANA, tipo papel milimetrado, con desvanecido radial.
+   Antes tenia perspectiva 3D, y eso peleaba con el dibujo: el raton es una
+   vista CENITAL, un objeto plano, y una vista cenital no puede tener sombra de
+   apoyo real. En vez de disimularlo, se asume: esto es un PLANO, no una foto de
+   producto. Por eso retícula plana, marcas de esquina y cajetín. */
+.bench__floor {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(to right,
+      color-mix(in oklab, var(--accent-500) 17%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--accent-500) 17%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(64% 58% at 50% 44%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(64% 58% at 50% 44%, #000 0%, transparent 78%);
+  opacity: .6;
+}
+.bench__mark {
+  position: absolute; inline-size: 20px; block-size: 20px;
+  border: 1.5px solid var(--hairline-strong); pointer-events: none;
+}
+.bench__mark--tl { inset-block-start: 0; inset-inline-start: 0; border-inline-end: 0; border-block-end: 0; }
+.bench__mark--tr { inset-block-start: 0; inset-inline-end: 0; border-inline-start: 0; border-block-end: 0; }
+.bench__mark--bl { inset-block-end: 0; inset-inline-start: 0; border-inline-end: 0; border-block-start: 0; }
+.bench__mark--br { inset-block-end: 0; inset-inline-end: 0; border-inline-start: 0; border-block-start: 0; }
+
+.bench__readout { display: grid; justify-items: center; gap: var(--sp-2); }
+.bench__display { display: flex; align-items: baseline; gap: var(--sp-3); }
+.bench__unit {
+  font: 500 var(--step--1)/1 var(--font-mono);
+  color: var(--text-hint); letter-spacing: .08em;
+}
+
+/* Cajetín: la esquina de un plano donde van los datos de la lámina. Da uso al
+   hueco de abajo y ancla la composición. */
+.bench__title {
+  inline-size: 100%;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px; background: var(--hairline);
+  border: 1px solid var(--hairline);
+  margin-block-start: var(--sp-2);
+}
+.bench__title > div {
+  background: var(--bg-1); padding: var(--sp-3) var(--sp-4);
+  display: grid; gap: 4px;
+}
+.bench__title .hud { font-size: var(--step--2); }
+.bench__title b {
+  font: 500 var(--step--1)/1.2 var(--font-mono);
+  color: var(--text-hi); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Leyenda de las llamadas del dibujo: el numero es el uso HID */
 .numb {
@@ -172,23 +280,20 @@ body {
 }
 .numb li {
   display: flex; align-items: center; gap: var(--sp-3);
-  font: 500 var(--step--2)/1.7 var(--font-mono);
+  font: 500 var(--step--1)/1.7 var(--font-mono);
   color: var(--text-mute); white-space: nowrap;
+  transition: color var(--t-fast) var(--ease-out);
+}
+.numb li:hover { color: var(--text-hi); }
+.numb li:hover b {
+  border-color: var(--accent-500); color: var(--accent-400);
 }
 .numb b {
   display: grid; place-items: center;
-  inline-size: 24px; block-size: 24px; flex: none;
+  inline-size: 26px; block-size: 26px; flex: none;
   border: 1px solid var(--hairline-strong); border-radius: var(--r-pill);
   color: var(--text-hi); font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-/* rejilla tecnica sutil: 1 px cada 32, apenas visible */
-.canvas::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background-image:
-    linear-gradient(to right, oklch(1 0 0 / .022) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(1 0 0 / .022) 1px, transparent 1px);
-  background-size: 32px 32px;
 }
 
 .device-frame {
@@ -223,8 +328,17 @@ body {
 .sect { background: var(--bg-1); padding: var(--sp-4); }
 .sect--tight { padding: var(--sp-3) var(--sp-4); }
 .sect__head {
-  display: flex; align-items: center; gap: var(--sp-2);
+  display: flex; align-items: baseline; gap: var(--sp-3);
   margin-block-end: var(--sp-3);
+  padding-block-end: var(--sp-3);
+  border-block-end: 1px solid var(--hairline);
+}
+/* Numero de seccion: el mismo lenguaje que las llamadas del dibujo, para que
+   el panel se lea como un plano y no como una lista de ajustes. */
+.sect__idx {
+  font: 600 var(--step--2)/1 var(--font-mono);
+  color: var(--accent-500); letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
 }
 .hud {
   font: 600 var(--step--2)/1 var(--font-mono);
@@ -374,18 +488,24 @@ body {
 /* ═══ display de LEDs de DPI (como el original) ══════════════════════════ */
 
 .dpiled {
-  display: inline-grid; grid-auto-flow: column; gap: 5px;
-  padding: var(--sp-3); background: var(--bg-sunken);
+  display: inline-grid; grid-auto-flow: column; gap: 6px;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-sunken);
+  border: 1px solid var(--hairline);
   border-radius: var(--r-tech);
+  box-shadow: var(--edge-light), inset 0 0 24px oklch(0 0 0 / .5);
 }
 .dpiled i {
-  inline-size: 3ch; block-size: 1.8em;
-  font: 600 var(--step-0)/1.8em var(--font-mono);
+  inline-size: 2.2ch; block-size: 1.9em;
+  font: 600 var(--step-1)/1.9em var(--font-mono);
   font-style: normal; text-align: center;
   color: oklch(0.30 0.02 258); background: var(--bg-0);
   border-radius: 2px; font-variant-numeric: tabular-nums;
 }
-.dpiled i.on { color: oklch(0.78 0.19 30); text-shadow: 0 0 10px oklch(0.78 0.19 30 / .8); }
+.dpiled i.on {
+  color: oklch(0.78 0.19 30);
+  text-shadow: 0 0 12px oklch(0.78 0.19 30 / .85);
+}
 
 /* ═══ lista de zonas del diagrama ════════════════════════════════════════ */
 
@@ -448,10 +568,10 @@ body {
      luminancia que el lienzo, asi que se confundia con el fondo. Ahora el
      cuerpo sube un escalon claro y, sobre todo, el contorno es una linea
      visible de verdad: en un dibujo tecnico manda la LINEA, no el relleno. */
-  --mg-shell:      color-mix(in oklab, var(--bg-3), white 3%);
-  --mg-shell-hi:   color-mix(in oklab, var(--bg-3), white 10%);
-  --mg-plate:      color-mix(in oklab, var(--bg-3), white 8%);
-  --mg-plate-hi:   color-mix(in oklab, var(--bg-3), white 20%);
+  --mg-shell:      color-mix(in oklab, var(--bg-3), white 6%);
+  --mg-shell-hi:   color-mix(in oklab, var(--bg-3), white 14%);
+  --mg-plate:      color-mix(in oklab, var(--bg-3), white 11%);
+  --mg-plate-hi:   color-mix(in oklab, var(--bg-3), white 24%);
   --mg-palm:       color-mix(in oklab, var(--bg-3), white 2%);
   --mg-recess:     var(--bg-sunken);
   --mg-control:    color-mix(in oklab, var(--bg-3), white 10%);
@@ -464,20 +584,28 @@ body {
   --mg-guide:      color-mix(in oklab, var(--hairline-strong), var(--accent-500) 22%);
   --mg-badge-bg:   var(--bg-sunken);
   --mg-badge-edge: color-mix(in oklab, var(--text-hint), var(--accent-500) 22%);
-  --mg-shadow:     oklch(0 0 0);
 }
 
-/* Escala con el HUECO del lienzo, no con la ventana: asi el ratón sigue
-   entero cuando el panel se lleva media pantalla. Subio de 46cqi a 68cqi tras
-   ver que en la ventana real quedaba pequeño y rodeado de vacio. */
+/* El SVG se mide contra el ancho del contenedor, que ya viene acotado por el
+   banco (760 px). Antes usaba 68cqi, que se apunta al PROPIO contenedor: con
+   el banco centrado eso daba una dependencia circular y acababa en 0 px. */
 .device-frame svg.mouse-diagram {
   inline-size: 100%;
   block-size: auto;
-  max-inline-size: min(100%, 68cqi);
-  max-block-size: 82vh;
+  max-inline-size: 100%;
+  /* 60vh, no 78: el banco tiene que caber ENTERO en la ventana con el display
+     y el cajetín debajo. Con 78vh el cajetín se salía y quedaba cortado. */
+  max-block-size: 60vh;
   margin-inline: auto;
+  /* La sombra sale de la SILUETA del dibujo, no de una elipse pintada dentro
+     del SVG. Tres capas en rampa (contacto, media, ambiente) porque una sola
+     no basta: en vista cenital el apoyo es un halo alrededor de TODA la
+     silueta, no una mancha debajo. */
+  filter:
+    drop-shadow(0 2px 3px oklch(0 0 0 / .8))
+    drop-shadow(0 9px 16px oklch(0 0 0 / .6))
+    drop-shadow(0 26px 36px oklch(0 0 0 / .45));
 }
-@container device (max-width: 420px) { .device-frame svg.mouse-diagram { max-inline-size: 100%; } }
 
 /* Las lineas del dibujo no engordan al escalar (1.5 px a 900 y a 4K) */
 .device-frame svg.mouse-diagram :is(path, rect, line)[stroke] {
