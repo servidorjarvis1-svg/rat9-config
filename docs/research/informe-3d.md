@@ -129,9 +129,23 @@ arregla eso, y ninguna técnica por siluetas tampoco.
 1. **Fotos reales del R.A.T.9 físico**: móvil, mesa giratoria, 2–3 alturas de cámara
    (no una), luz difusa, fondo contrastado. Valdría más que todo el material del
    instalador junto y habilitaría COLMAP/Meshroom de verdad.
-2. **Sacar la malla original del instalador**: el software renderiza un modelo 3D al
-   vuelo, así que la geometría está dentro. La pista sin agotar siguen siendo los
-   **61 PNG de 550x550 sin identificar**.
+2. ~~Sacar la malla original del instalador~~ — **DESCARTADO**. Dos motivos:
+   - El "visor 3D giratorio" del software original **no es 3D**: son 24 fotogramas
+     pre-renderizados (`Rotational.RAT9_01..24.png`), una ruleta de sprites. Si el
+     visor usa sprites, **no hay malla que extraer** del DLL. La premisa de la que
+     partía esta vía era falsa.
+   - Los **61 PNG de 550x550** (la última pista) están revisados uno a uno en hoja de
+     contactos: son **imágenes promocionales de toda la gama** Mad Catz/Cyborg
+     (mandos, teclados, joysticks, ratones), con fondos variados y un panel de
+     software. No hay serie ordenada de rotación, no hay vista inferior (la única
+     candidata era una vista oblicua superior-lateral sin sensor ni patines) y no
+     hay más resolución. Muestran el R.A.T.9 en varios ángulos sueltos, que no sirven
+     para reconstruir: sin poses conocidas y con una vista por ángulo, no hay
+     multivista.
+
+**Por tanto: con este material no hay modelo 3D posible, y no queda ninguna vía
+abierta por el lado del instalador.** Lo único que lo desbloquea son fotos reales del
+aparato.
 
 ### Dónde vive ahora el trabajo
 `3d/` en el repo (scripts, las 48 máscaras, malla y parámetros; los binarios van en
