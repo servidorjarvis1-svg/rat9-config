@@ -12,9 +12,11 @@ inversa del software oficial de Windows (Mad Catz Software 7.0.45.2).
 | `rat9/pr0.py` | ✅ parser y generador del formato `.pr0` (round-trip verificado) |
 | `rat9/cli.py` | ✅ `status`, `dpi`, `scan`, `frames`, `send` |
 | `rat9/server.py` | ✅ API + servidor de estáticos |
+| `rat9/app.py` + `rat9/ui/` | ✅ app de escritorio (GTK4 + WebKit) con cuatro vistas del aparato |
 | `rat9/web/` | ✅ editor visual de macros, panel de DPI, vista .pr0 |
 | Escribir DPI | ❌ documentado, sin verificar |
 | Enviar perfil al ratón | ❌ framing sin respaldo binario (ver abajo) |
+| Modelo 3D del aparato | ❌ **cerrado**: el material no da (ver `docs/research/informe-3d.md`) |
 
 ## Protocolo (todo verificado contra el ratón)
 
@@ -82,6 +84,45 @@ python3 -m rat9.server 8766
 ```
 Permite crear macros (teclas, botones, rueda, multimedia), organizarlas en bloques
 `press`/`repeat`/`release`, elegir modo abierto o cerrado, y generar el `.pr0`.
+
+### La app de escritorio
+
+```bash
+/usr/bin/python3 -m rat9.app                  # ventana GTK4 + WebKit
+/usr/bin/python3 -m rat9.app --vista giro     # abrir en una vista concreta
+```
+
+El banco de la izquierda tiene **cuatro vistas** del aparato:
+
+- **Esquema** — dibujo vectorial generado, con las zonas clicables. No está puesto
+  a ojo: el contorno y las costuras se **miden sobre el render original**
+  (`tools/trazar-silueta.py`, `tools/trazar-interior.py`) y el generador traza
+  sobre esas medidas.
+- **Producto** — el render cenital del software original.
+- **Las dos capas** — el plano superpuesto a la fotografía.
+- **Giro** — los 24 fotogramas reales del aparato, arrastrables: el ratón gira de
+  verdad. Es lo mismo que hacía el software de Mad Catz, que tampoco era 3D sino
+  una ruleta de sprites. Los fotogramas no van en el repositorio (son material
+  gráfico ajeno): se sacan del instalador con `tools/preparar-giro.sh`, y si no
+  están el botón simplemente no se ofrece.
+
+Un apunte de método: `?medir=1` en la URL hace que la página escriba los tamaños
+reales de los elementos en pantalla. Existe porque un modelo de visión no mide y el
+navegador no avisa de un elemento que sale diminuto — lo pinta pequeño y calla.
+
+## Las llamadas del esquema
+
+Las nueve llamadas siguen el lenguaje del software original: caja achaflanada,
+línea con codo y punto de anclaje sobre la pieza. Tres detalles que no son
+decoración:
+
+- Van **ordenadas por la altura de su anclaje**, no por número: si no, una llamada
+  alta baja hasta una pieza baja y cruza por delante de todas las de abajo.
+- Las cajas y las líneas van **por detrás del cuerpo** y solo el punto de anclaje
+  por delante. Dibujadas encima tapaban justo lo que señalan.
+- Una **rueda** no se dibuja como un botón ni se señala con un punto: su cuerpo es
+  una cápsula con degradado transversal (oscuro en los cantos, claro en la cresta)
+  y su marca es un arco con punta, porque gira en dos sentidos.
 
 ## Requisitos
 
