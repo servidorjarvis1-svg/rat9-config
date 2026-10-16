@@ -32,3 +32,7 @@ rat9/ui/assets/giro/
 # Fotogramas ampliados y mascaras preparados para el SfM: mismo material del
 # instalador. Se regeneran con tools/sfm-poses.sh a partir de 3d/masks/.
 3d/sfm/
+
+# Capturas de entrega: el montaje del giro son los 24 fotogramas del instalador y
+# el resto ensenan el render del aparato. Se quedan en local, no se publican.
+docs/research/shots/FINAL-*.png
