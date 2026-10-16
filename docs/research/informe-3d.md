@@ -147,6 +147,65 @@ arregla eso, y ninguna técnica por siluetas tampoco.
 abierta por el lado del instalador.** Lo único que lo desbloquea son fotos reales del
 aparato.
 
+---
+
+## SEGUNDA ADDENDA — la conclusión de arriba es FALSA. El rig estaba mal.
+
+Lo anterior se apoyaba en dos cosas que, medidas, no se sostienen. Se deja escrito
+porque es el error más caro de esta sesión.
+
+### El material SÍ cubre todo el giro, incluida la base
+El informe decía que "la base del ratón es irrecuperable: ninguna cámara la ve" y que
+todas las vistas son de "una sola banda de elevación". **Falso.** Mirando los
+fotogramas uno a uno, el **fotograma 12 muestra la cara INFERIOR**: la placa de la
+base, el sensor y los patines. Con la cámara dando vueltas alrededor de un objeto
+siempre derecho, la cara inferior no puede verse nunca. Verla significa que lo que
+gira es **el objeto**, no la cámara.
+
+### El movimiento es una RODADURA sobre el eje largo, y está medido
+No hace falta creerse al modelo de visión: se mide la silueta de los 24 fotogramas de
+la serie 1.
+
+| | mínimo | máximo | recorrido sobre el medio |
+|---|---|---|---|
+| **ALTO** de la silueta (vertical) | 280 px | 348 px | **22%** |
+| **ANCHO** de la silueta (horizontal) | 98 px | 224 px | **71%** |
+
+El alto casi no se mueve y el ancho se desploma a menos de la mitad (98 px en los
+fotogramas 6 y 18: el ratón de perfil). Eso es la firma exacta de **rodar sobre el eje
+largo**: el largo es invariante y la sección transversal proyectada va cambiando. En
+una peana de eje vertical, el alto variaría tanto como el ancho.
+
+### Y por eso el IoU de 0,79 del primer intento era un FALSO POSITIVO
+Se entiende ahora por qué el rig equivocado puntuaba alto: con el eje vertical, el
+código mapeaba la **altura del objeto** a la **vertical de la imagen**. Como las
+siluetas son altas (340 px), el tallado "explicaba" esas siluetas construyendo un
+objeto **alto y estrecho** — y de hecho sus dimensiones salieron 0,45 : 0,89 : 1,06,
+más alto que largo. Es decir: encajaba los contornos con un objeto con forma de
+torre, no de ratón. **Un IoU alto con un objeto de forma equivocada no valida nada.**
+
+### Estado real y qué falta
+- El rig correcto es una rotación sobre el eje largo, con el largo del ratón en la
+  **vertical** de la imagen (los fotogramas son verticales) y una relación
+  largo:ancho **medida de 1,52:1** (340 px / 224 px). Con la rejilla cúbica de antes el
+  objeto ni siquiera cabía: la rejilla daba 246 px de largo y el ratón mide 340.
+- Con eso implementado (`tools/visual-hull-ejelargo.py`), mi tallado sigue puntuando
+  **bajo (0,20)** frente al 0,79 del rig equivocado. **Tengo un fallo ahí que no he
+  encontrado** (sospecha concreta: el cálculo de IoU proyecta los vóxeles como puntos
+  sueltos y con rejilla gruesa deja huecos, lo que hunde artificialmente la medida,
+  pero no está confirmado).
+- Conclusión honesta: **el material es suficiente en principio y el movimiento ya está
+  identificado**. Lo que no se puede es seguir adivinando el rig a mano: la vía
+  correcta es **resolver las poses de cámara por SfM (COLMAP)**, que las calcula desde
+  las propias imágenes en vez de que yo las suponga. Requiere compilar COLMAP del AUR
+  (~500-700 MB, 15-40 min, `MAX_JOBS=8` por la regla del usuario de un solo build a la
+  vez y con la paralelización limitada). **Hay que preguntar antes de compilar.**
+
+### Lo que sí se puede hacer hoy, sin reconstruir nada
+Las 48 vistas, tal cual, son una **ruleta de 24 fotogramas reales**: un visor en la app
+donde el ratón gira al arrastrar. Es exactamente lo que hacía el software original
+(que no era 3D, eran sprites) y da un ratón girando de verdad, sin inventar geometría.
+
 ### Dónde vive ahora el trabajo
 `3d/` en el repo (scripts, las 48 máscaras, malla y parámetros; los binarios van en
 `.gitignore`), porque `~/.hermes/cache/scratch/` **se poda a las 24 h** y se habría
