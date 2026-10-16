@@ -269,17 +269,101 @@ escritura: se probó el vendor OUT con `bRequest 0x91` (el de la wiki de MayeulC
 daba PIPE — **nunca se probó `0x40` con `bRequest 0x90`**, que es justo el gemelo de
 dirección del que sí lee.
 
-### Lo que aún no está fijado
+## 11. Lo que se midió contra el aparato — y la puerta que NO existe
 
-- **El `bmRequestType` exacto del envío** (se deduce `0x40`, vendor OUT, pero el
-  descriptor se monta dentro de la fontanería de WDF y no se ve el byte literal).
-- **El `wIndex` de escritura** (el de lectura lleva el registro: `0x74`, `0xBA`; en
-  escritura el "registro" parece ir codificado en los bits altos del `wValue`, así que
-  probablemente sea 0 o el nivel).
+Aquí se acaba el análisis estático y empiezan los hechos medidos. Cada uno es una
+prueba contra el ratón conectado, y hay uno que **corrige** lo que se creía antes.
 
-Los dos se resuelven con **una sola prueba contra el ratón**, empezando por algo
-reversible.
+### El aparato no declara ningún informe de escritura
 
-**Nada de esto se ha probado contra el hardware.** Todo sigue siendo análisis estático.
+`lsusb -v` da el descriptor HID del ratón, y es de una claridad incómoda:
+
+```
+Report Descriptor: (length is 64)
+  13 botones (13 bits) + 3 de relleno
+  Direction-X, Direction-Y (16 bits cada uno)
+  Wheel (8 bits)
+  → TODO son informes de ENTRADA (Input)
+bNumInterfaces 1 · bNumEndpoints 1 · Endpoint 0x81 IN (interrupción)
+```
+
+**Cero informes de feature. Cero informes de salida. Un solo endpoint, y es de
+entrada.** No hay ningún sitio declarado donde meterle un ajuste al aparato.
+
+### Corrección: "SET_REPORT es el canal de escritura" era FALSO
+
+En su día se concluyó que el canal real de escritura era `SET_REPORT` (0x21 / 0x09 /
+wValue 0x0300) porque el aparato **no devolvía PIPE**. Eso era leer mal la señal: el
+aparato **acepta el transfer** y no hace nada con él, porque **no tiene ningún informe
+de feature donde escribirlo**. Aceptar el sobre no es tener buzón.
+
+Medición de hoy: el mismo `SET_REPORT` con `wValue 0` da PIPE (solo reconoce la forma
+formal), y con `wValue 0x0300` y la carga de 5 bytes del driver **no cambia nada**.
+
+### Los envíos de control dan PIPE, todos
+
+Se barrieron 20 combinaciones de `bmRequestType` × `bRequest` y 42 direcciones:
+
+| qué se probó | valores | resultado |
+|---|---|---|
+| `bmRequestType` | 0x40 (vendor/dev), 0x41 (vendor/intf), 0x01 (std), 0x21 (clase) | PIPE |
+| `bRequest` | **0x90**, **0xB8**, 0x91, 0x09, 0x00 | PIPE |
+| `wIndex` | 0x72–0x78, 0xBA, 0xBB, 0x172–0x174, 0x272–0x274, 0x1072–0x1074, 0x2072–0x2074 | PIPE |
+
+**Ningún envío de control es aceptado.** Ninguno. Con ninguna dirección.
+
+### Y la lectura sí va — y direcciona por `wIndex`
+
+| wValue | wIndex | resultado |
+|---|---|---|
+| 0 | 0x00BA | ✓ responde (batería) |
+| 0 | 0x0074 | ✓ responde (perfil) |
+| 0 | **0x0000** | **PIPE** |
+| ≠0 | 0x00BA | ✓ responde **e ignora el wValue** |
+| ≠0 | 0x0000 | PIPE |
+
+Dos cosas que se aprenden aquí y que costaron un rato: el aparato **direcciona todo
+por el `wIndex`** (el `wValue` le da igual), y **`wIndex = 0` no es un registro
+válido** — da PIPE incluso leyendo. O sea que los envíos que se probaron "a la
+dirección 0" estaban condenados desde el principio, y eso se veía como si el canal
+fuera el problema cuando era la dirección.
+
+### Qué significa todo junto
+
+El R.A.T.9, en su modo normal, **abre una puerta de lectura y ninguna de escritura**.
+No es que no hayamos dado con la combinación: no hay ninguna combinación que el
+firmware acepte.
+
+Eso deja dos lecturas, y ninguna está demostrada:
+
+1. **Que exista un modo de programación** al que haya que entrar primero — algo que
+   encaja con el módulo `Module_Programming` del driver y con el registro de
+   programación que aparece en la plantilla del propio driver (`0x1e2b8`). Entrar
+   sería cosa de un `SET_REPORT` con la orden de conmutación, y a partir de ahí el
+   aparato se dejaría escribir. **No comprobado.**
+2. **Que la escritura no pase por aquí** — el R.A.T.9 es inalámbrico, y los ajustes
+   pueden viajar por el enlace de radio en vez de por el USB, con el receptor
+   limitándose a leer estado. En ese caso el único camino sería replicar lo que hace
+   el driver de Windows, incluida su secuencia de inicialización, que no está
+   reproducida.
+
+Lo que sí está cerrado con medida: **la lectura funciona y está caracterizada**
+(batería 92-93 %, perfil, registros por `wIndex`), y **la escritura directa no existe
+en este modo**.
+
+## 12. La lección de método que deja esto
+
+Dos conclusiones se dieron por buenas en su día y las dos eran falsas, por la misma
+razón: **se leyó un "no falla" como un "funciona"**.
+
+- `SET_REPORT` no devolvía PIPE → "es el canal de escritura". No: acepta el sobre y no
+  tiene buzón.
+- Los envíos a `wIndex 0` daban PIPE → "el canal de escritura no está". No: era la
+  dirección. `wIndex 0` da PIPE **hasta leyendo**.
+
+Lo que vale aquí, y conviene no volver a olvidar: **un transfer aceptado no es un
+efecto**, y **un PIPE no dice dónde está el fallo, solo que lo hay**. Para saber si algo
+sirve hay que **medir el efecto** — y en este proyecto el efecto se mide mirando si el
+ratón cambia, no si la llamada devuelve error.
 
 
