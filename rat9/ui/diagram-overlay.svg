@@ -149,128 +149,128 @@
 </g>
 
 <!-- canal y rueda central -->
-<path d="M 205 90 L 263 90 Q 267 90 267 96 L 267 258 Q 267 264 263 264 L 205 264 Q 201 264 201 258 L 201 96 Q 201 90 205 90 Z" fill="var(--mg-recess)"/>
-<path d="M 198 92 Q 234 83 270 92" fill="none" stroke="var(--mg-edge)" stroke-width="1.3"/>
+<path d="M 205 102 L 263 102 Q 267 102 267 108 L 267 224 Q 267 230 263 230 L 205 230 Q 201 230 201 224 L 201 108 Q 201 102 205 102 Z" fill="var(--mg-recess)"/>
+<path d="M 198 104 Q 234 95 270 104" fill="none" stroke="var(--mg-edge)" stroke-width="1.3"/>
 <g class="z" data-zone="btn-scroll" data-usage="3" tabindex="0" role="button"
    aria-label="Clic de la rueda">
-  <rect class="hit" x="213" y="100"
-        width="42" height="152" rx="14"
+  <rect class="hit" x="213" y="112"
+        width="42" height="106" rx="14"
         fill="var(--mg-recess)" stroke="var(--mg-gap)" stroke-width="1.6"/>
   <!-- luz lateral: es lo que hace que se lea como un cilindro y no como una rejilla -->
-  <rect x="216" y="105" width="7"
-        height="142" rx="3.5" fill="var(--mg-ridge)"
+  <rect x="216" y="117" width="7"
+        height="96" rx="3.5" fill="var(--mg-ridge)"
         opacity=".7"/>
   <!-- reflejo especular arriba: el brillo de una superficie cilindrica -->
-  <ellipse cx="234" cy="118"
+  <ellipse cx="234" cy="130"
            rx="14" ry="7" fill="var(--mg-luz)" opacity=".32"/>
   <g stroke="var(--mg-seam)" stroke-width="1.2" opacity=".9">
-    <line x1="227" y1="118.0" x2="251" y2="118.0"/>
-    <line x1="227" y1="147.0" x2="251" y2="147.0"/>
-    <line x1="227" y1="176.0" x2="251" y2="176.0"/>
-    <line x1="227" y1="205.0" x2="251" y2="205.0"/>
-    <line x1="227" y1="234.0" x2="251" y2="234.0"/>
+    <line x1="227" y1="130.0" x2="251" y2="130.0"/>
+    <line x1="227" y1="147.5" x2="251" y2="147.5"/>
+    <line x1="227" y1="165.0" x2="251" y2="165.0"/>
+    <line x1="227" y1="182.5" x2="251" y2="182.5"/>
+    <line x1="227" y1="200.0" x2="251" y2="200.0"/>
   </g>
 </g>
 
 <!-- controles del panel lateral -->
   <g class="z" data-zone="btn-precision" data-usage="8" tabindex="0"
      role="button" aria-label="Botón de precisión">
-    <path class="hit" d="M 110.2 152.0 L 107.4 161.6 L 104.8 171.3 L 104.0 180.9 L 103.2 190.5 L 102.4 200.2 L 101.7 209.8 L 101.3 219.5 L 100.9 229.1 L 100.6 238.7 L 99.9 248.4 L 97.2 258.0 L 148.2 258.0 L 150.3 248.4 L 150.9 238.7 L 151.2 229.1 L 151.5 219.5 L 151.7 209.8 L 151.5 200.2 L 151.0 190.5 L 150.6 180.9 L 150.1 171.3 L 151.7 161.6 L 153.5 152.0 Z" fill="var(--mg-control)"
+    <path class="hit" d="M 86.4 292.0 L 83.5 295.3 L 80.7 298.5 L 77.9 301.8 L 75.1 305.1 L 72.2 308.4 L 69.4 311.6 L 66.6 314.9 L 63.8 318.2 L 61.0 321.5 L 58.1 324.7 L 55.3 328.0 L 114.7 328.0 L 116.9 324.7 L 119.2 321.5 L 121.4 318.2 L 123.7 314.9 L 125.9 311.6 L 128.2 308.4 L 130.5 305.1 L 132.7 301.8 L 135.0 298.5 L 137.2 295.3 L 139.5 292.0 Z" fill="var(--mg-control)"
           stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
   </g>
   <g class="z" data-zone="btn-forward" data-usage="5" tabindex="0"
      role="button" aria-label="Adelante">
-    <path class="hit" d="M 92.2 276.0 L 90.8 280.9 L 89.4 285.8 L 87.4 290.7 L 83.2 295.6 L 79.0 300.5 L 74.8 305.5 L 70.5 310.4 L 66.3 315.3 L 62.1 320.2 L 57.8 325.1 L 53.6 330.0 L 113.3 330.0 L 116.7 325.1 L 120.0 320.2 L 123.4 315.3 L 126.8 310.4 L 130.2 305.5 L 133.6 300.5 L 137.0 295.6 L 140.4 290.7 L 141.9 285.8 L 143.0 280.9 L 144.1 276.0 Z" fill="var(--mg-control)"
+    <path class="hit" d="M 50.0 356.0 L 50.0 359.3 L 50.0 362.5 L 50.0 365.8 L 50.0 369.1 L 50.0 372.4 L 50.0 375.6 L 50.0 378.9 L 51.7 382.2 L 54.3 385.5 L 56.9 388.7 L 59.5 392.0 L 102.0 392.0 L 98.4 388.7 L 94.8 385.5 L 91.2 382.2 L 89.3 378.9 L 90.8 375.6 L 92.4 372.4 L 93.9 369.1 L 95.5 365.8 L 97.0 362.5 L 98.5 359.3 L 100.1 356.0 Z" fill="var(--mg-control)"
           stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
   </g>
   <g class="z" data-zone="btn-back" data-usage="4" tabindex="0"
      role="button" aria-label="Atrás">
-    <path class="hit" d="M 50.0 346.0 L 50.0 350.9 L 50.0 355.8 L 50.0 360.7 L 50.0 365.6 L 50.0 370.5 L 50.0 375.5 L 50.3 380.4 L 54.2 385.3 L 58.1 390.2 L 61.9 395.1 L 65.8 400.0 L 110.9 400.0 L 105.4 395.1 L 100.0 390.2 L 94.6 385.3 L 89.2 380.4 L 90.9 375.5 L 93.2 370.5 L 95.5 365.6 L 97.9 360.7 L 100.2 355.8 L 102.5 350.9 L 104.8 346.0 Z" fill="var(--mg-control)"
+    <path class="hit" d="M 60.0 458.0 L 57.4 461.3 L 54.7 464.5 L 52.0 467.8 L 50.5 471.1 L 52.3 474.4 L 54.2 477.6 L 56.1 480.9 L 57.9 484.2 L 59.8 487.5 L 61.7 490.7 L 63.6 494.0 L 118.3 494.0 L 117.2 490.7 L 116.1 487.5 L 115.0 484.2 L 113.9 480.9 L 112.8 477.6 L 111.8 474.4 L 110.7 471.1 L 112.0 467.8 L 114.2 464.5 L 116.3 461.3 L 118.4 458.0 Z" fill="var(--mg-control)"
           stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
   </g>
 
 <!-- rueda del pulgar -->
-<path d="M 67.2 398.0 L 75.7 408.7 L 84.2 419.5 L 85.7 430.2 L 76.9 440.9 L 68.2 451.6 L 59.5 462.4 L 54.6 473.1 L 60.7 483.8 L 66.9 494.5 L 73.0 505.3 L 80.1 516.0 L 123.7 516.0 L 119.1 505.3 L 115.5 494.5 L 111.9 483.8 L 108.3 473.1 L 112.6 462.4 L 119.6 451.6 L 126.6 440.9 L 133.5 430.2 L 129.4 419.5 L 117.5 408.7 L 105.6 398.0 Z" fill="var(--recess)" stroke="var(--mg-edge)" stroke-width="1.3"/>
+<path d="M 60.9 390.0 L 67.0 397.7 L 73.1 405.5 L 79.2 413.2 L 85.3 420.9 L 86.9 428.6 L 80.6 436.4 L 74.4 444.1 L 68.1 451.8 L 61.8 459.5 L 55.5 467.3 L 55.7 475.0 L 109.0 475.0 L 109.4 467.3 L 114.4 459.5 L 119.4 451.8 L 124.5 444.1 L 129.5 436.4 L 134.6 428.6 L 131.0 420.9 L 122.4 413.2 L 113.9 405.5 L 105.3 397.7 L 96.8 390.0 Z" fill="var(--recess)" stroke="var(--mg-edge)" stroke-width="1.3"/>
 <g class="z" data-zone="thumb-cw" data-usage="6" tabindex="0" role="button"
    aria-label="Rueda del pulgar · horaria">
-  <path class="hit" d="M 67.2 398.0 L 71.5 403.4 L 75.7 408.7 L 80.0 414.1 L 84.2 419.5 L 88.4 424.8 L 85.7 430.2 L 81.3 435.5 L 76.9 440.9 L 72.6 446.3 L 68.2 451.6 L 63.8 457.0 L 116.1 457.0 L 119.6 451.6 L 123.1 446.3 L 126.6 440.9 L 130.1 435.5 L 133.5 430.2 L 135.3 424.8 L 129.4 419.5 L 123.4 414.1 L 117.5 408.7 L 111.6 403.4 L 105.6 398.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
+  <path class="hit" d="M 60.9 390.0 L 64.0 393.9 L 67.0 397.7 L 70.1 401.6 L 73.1 405.5 L 76.2 409.3 L 79.2 413.2 L 82.3 417.0 L 85.3 420.9 L 88.4 424.8 L 86.9 428.6 L 83.8 432.5 L 132.0 432.5 L 134.6 428.6 L 135.2 424.8 L 131.0 420.9 L 126.7 417.0 L 122.4 413.2 L 118.1 409.3 L 113.9 405.5 L 109.6 401.6 L 105.3 397.7 L 101.1 393.9 L 96.8 390.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
         stroke-width="1.6"/>
 </g>
 <g class="z" data-zone="thumb-ccw" data-usage="7" tabindex="0"
    role="button" aria-label="Rueda del pulgar · antihoraria">
-  <path class="hit" d="M 63.8 457.0 L 59.5 462.4 L 55.1 467.7 L 54.6 473.1 L 57.7 478.5 L 60.7 483.8 L 63.8 489.2 L 66.9 494.5 L 69.9 499.9 L 73.0 505.3 L 76.1 510.6 L 80.1 516.0 L 123.7 516.0 L 120.9 510.6 L 119.1 505.3 L 117.3 499.9 L 115.5 494.5 L 113.7 489.2 L 111.9 483.8 L 110.1 478.5 L 108.3 473.1 L 109.1 467.7 L 112.6 462.4 L 116.1 457.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
+  <path class="hit" d="M 83.8 432.5 L 80.6 436.4 L 77.5 440.2 L 74.4 444.1 L 71.2 448.0 L 68.1 451.8 L 64.9 455.7 L 61.8 459.5 L 58.6 463.4 L 55.5 467.3 L 53.5 471.1 L 55.7 475.0 L 109.0 475.0 L 107.7 471.1 L 109.4 467.3 L 111.9 463.4 L 114.4 459.5 L 116.9 455.7 L 119.4 451.8 L 122.0 448.0 L 124.5 444.1 L 127.0 440.2 L 129.5 436.4 L 132.0 432.5 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
         stroke-width="1.6"/>
 </g>
 <g stroke="var(--mg-ridge)" stroke-width="1" opacity=".4">
-    <line x1="81.3" y1="412.0" x2="118.1" y2="412.0"/>
-    <line x1="91.3" y1="427.0" x2="132.6" y2="427.0"/>
+    <line x1="75.0" y1="404.0" x2="109.3" y2="404.0"/>
+    <line x1="82.5" y1="413.5" x2="119.8" y2="413.5"/>
+    <line x1="90.0" y1="423.0" x2="130.3" y2="423.0"/>
+    <line x1="86.8" y1="432.5" x2="129.0" y2="432.5"/>
     <line x1="79.1" y1="442.0" x2="122.8" y2="442.0"/>
-    <line x1="66.8" y1="457.0" x2="113.1" y2="457.0"/>
-    <line x1="57.0" y1="472.0" x2="105.0" y2="472.0"/>
-    <line x1="65.6" y1="487.0" x2="110.0" y2="487.0"/>
-    <line x1="74.1" y1="502.0" x2="115.0" y2="502.0"/>
+    <line x1="71.3" y1="451.5" x2="116.7" y2="451.5"/>
+    <line x1="63.6" y1="461.0" x2="110.5" y2="461.0"/>
 </g>
 
 <!-- botones de perfil -->
   <g class="z" data-zone="mode" data-usage="9"
      tabindex="0" role="button" aria-label="Botón de modos">
-    <path class="hit" d="M 125.5 90.0 C 124.6 92.6 121.9 100.5 120.2 105.8 C 118.6 111.0 117.2 116.2 115.7 121.5 C 114.2 126.8 113.0 132.0 111.5 137.2 C 110.0 142.5 108.5 147.8 106.9 153.0 C 105.4 158.2 103.3 163.5 102.3 168.8 C 101.3 174.0 101.2 179.2 100.7 184.5 C 100.2 189.8 99.7 195.0 99.3 200.2 C 99.0 205.5 98.6 213.4 98.4 216.0 L 122.4 216.0 C 122.6 213.4 123.0 205.5 123.3 200.2 C 123.7 195.0 124.2 189.8 124.7 184.5 C 125.2 179.2 125.3 174.0 126.3 168.8 C 127.3 163.5 129.4 158.2 130.9 153.0 C 132.5 147.8 134.0 142.5 135.5 137.2 C 137.0 132.0 138.2 126.8 139.7 121.5 C 141.2 116.2 142.6 111.0 144.2 105.8 C 145.9 100.5 148.6 92.6 149.5 90.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
+    <path class="hit" d="M 109.6 144.0 C 109.1 145.6 107.7 150.3 106.8 153.5 C 105.8 156.7 104.8 159.8 104.0 163.0 C 103.1 166.2 102.2 169.3 101.7 172.5 C 101.2 175.7 101.2 178.8 100.9 182.0 C 100.6 185.2 100.4 188.3 100.1 191.5 C 99.8 194.7 99.5 197.8 99.3 201.0 C 99.0 204.2 98.8 207.3 98.7 210.5 C 98.5 213.7 98.4 218.4 98.3 220.0 L 122.3 220.0 C 122.4 218.4 122.5 213.7 122.7 210.5 C 122.8 207.3 123.0 204.2 123.3 201.0 C 123.5 197.8 123.8 194.7 124.1 191.5 C 124.4 188.3 124.6 185.2 124.9 182.0 C 125.2 178.8 125.2 175.7 125.7 172.5 C 126.2 169.3 127.1 166.2 128.0 163.0 C 128.8 159.8 129.8 156.7 130.8 153.5 C 131.7 150.3 133.1 145.6 133.6 144.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
           stroke-width="2" stroke-linejoin="round"/>
-        <line x1="124.5" y1="102.0" x2="142.5" y2="102.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="119.4" y1="119.0" x2="137.4" y2="119.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="114.8" y1="136.0" x2="132.8" y2="136.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="109.9" y1="153.0" x2="127.9" y2="153.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="104.9" y1="170.0" x2="122.9" y2="170.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="103.5" y1="187.0" x2="121.5" y2="187.0" stroke="var(--mg-edge)" stroke-width="1"/>
-    <line x1="102.0" y1="204.0" x2="120.0" y2="204.0" stroke="var(--mg-edge)" stroke-width="1"/>
+        <line x1="109.0" y1="156.0" x2="127.0" y2="156.0" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="106.5" y1="164.7" x2="124.5" y2="164.7" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="104.6" y1="173.3" x2="122.6" y2="173.3" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="103.9" y1="182.0" x2="121.9" y2="182.0" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="103.2" y1="190.7" x2="121.2" y2="190.7" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="102.4" y1="199.3" x2="120.4" y2="199.3" stroke="var(--mg-edge)" stroke-width="1"/>
+    <line x1="101.8" y1="208.0" x2="119.8" y2="208.0" stroke="var(--mg-edge)" stroke-width="1"/>
   </g>
 <!-- llamadas numeradas: el numero es el uso HID que reporta el firmware -->
 <g id="badges">
-  <path d="M 414 88 L 250 88 L 128 153" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="119" cy="153" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 88 L 260 88 L 243 165" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="234" cy="165" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 100 L 414 76 L 545 76 L 552 83 L 552 93 L 545 100 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="92" font-size="11.5">09</text>
-  <text class="cal-t" x="441" y="92" font-size="10">MODOS</text>
-  <path d="M 414 140 L 260 140 L 243 176" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="234" cy="176" r="4" fill="var(--mg-accent)"/>
-  <path d="M 414 152 L 414 128 L 545 128 L 552 135 L 552 145 L 545 152 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="144" font-size="11.5">03</text>
-  <text class="cal-t" x="441" y="144" font-size="10">RUEDA</text>
-  <path d="M 414 192 L 250 192 L 175 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <text class="cal-n" x="424" y="92" font-size="11.5">03</text>
+  <text class="cal-t" x="441" y="92" font-size="10">RUEDA</text>
+  <path d="M 414 140 L 250 140 L 175 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
   <circle cx="166" cy="182" r="4" fill="var(--mg-accent)"/>
-  <path d="M 414 204 L 414 180 L 545 180 L 552 187 L 552 197 L 545 204 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="196" font-size="11.5">01</text>
-  <text class="cal-t" x="441" y="196" font-size="10">IZQ.</text>
-  <path d="M 414 244 L 339 244 L 322 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <path d="M 414 152 L 414 128 L 545 128 L 552 135 L 552 145 L 545 152 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="144" font-size="11.5">01</text>
+  <text class="cal-t" x="441" y="144" font-size="10">IZQ.</text>
+  <path d="M 414 192 L 339 192 L 322 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
   <circle cx="313" cy="182" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 204 L 414 180 L 545 180 L 552 187 L 552 197 L 545 204 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="196" font-size="11.5">02</text>
+  <text class="cal-t" x="441" y="196" font-size="10">DER.</text>
+  <path d="M 414 244 L 250 244 L 122 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="113" cy="182" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 256 L 414 232 L 545 232 L 552 239 L 552 249 L 545 256 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="248" font-size="11.5">02</text>
-  <text class="cal-t" x="441" y="248" font-size="10">DER.</text>
-  <path d="M 414 296 L 250 296 L 136 205" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="127" cy="205" r="4" fill="var(--mg-accent)"/>
+  <text class="cal-n" x="424" y="248" font-size="11.5">09</text>
+  <text class="cal-t" x="441" y="248" font-size="10">MODOS</text>
+  <path d="M 414 296 L 250 296 L 108 310" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="99" cy="310" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 308 L 414 284 L 545 284 L 552 291 L 552 301 L 545 308 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
   <text class="cal-n" x="424" y="300" font-size="11.5">08</text>
   <text class="cal-t" x="441" y="300" font-size="10">PRECIS.</text>
-  <path d="M 414 348 L 250 348 L 113 303" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="104" cy="303" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 348 L 250 348 L 80 374" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="71" cy="374" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 360 L 414 336 L 545 336 L 552 343 L 552 353 L 545 360 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
   <text class="cal-n" x="424" y="352" font-size="11.5">05</text>
   <text class="cal-t" x="441" y="352" font-size="10">ADEL.</text>
-  <path d="M 414 400 L 250 400 L 80 373" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="71" cy="373" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 400 L 250 400 L 108 411" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="99" cy="411" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 412 L 414 388 L 545 388 L 552 395 L 552 405 L 545 412 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="404" font-size="11.5">04</text>
-  <text class="cal-t" x="441" y="404" font-size="10">ATRAS</text>
-  <path d="M 414 452 L 250 452 L 121 428" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="112" cy="428" r="4" fill="var(--mg-accent)"/>
+  <text class="cal-n" x="424" y="404" font-size="11.5">06</text>
+  <text class="cal-t" x="441" y="404" font-size="10">PULG CW</text>
+  <path d="M 414 452 L 250 452 L 101 454" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="92" cy="454" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 464 L 414 440 L 545 440 L 552 447 L 552 457 L 545 464 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="456" font-size="11.5">06</text>
-  <text class="cal-t" x="441" y="456" font-size="10">PULG CW</text>
-  <path d="M 414 504 L 250 504 L 97 486" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
-  <circle cx="88" cy="486" r="4" fill="var(--mg-accent)"/>
+  <text class="cal-n" x="424" y="456" font-size="11.5">07</text>
+  <text class="cal-t" x="441" y="456" font-size="10">PULG CCW</text>
+  <path d="M 414 504 L 250 504 L 92 476" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="83" cy="476" r="4" fill="var(--mg-accent)"/>
   <path d="M 414 516 L 414 492 L 545 492 L 552 499 L 552 509 L 545 516 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
-  <text class="cal-n" x="424" y="508" font-size="11.5">07</text>
-  <text class="cal-t" x="441" y="508" font-size="10">PULG CCW</text>
+  <text class="cal-n" x="424" y="508" font-size="11.5">04</text>
+  <text class="cal-t" x="441" y="508" font-size="10">ATRAS</text>
 </g>
 </g>
 </svg>

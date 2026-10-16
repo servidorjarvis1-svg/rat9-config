@@ -1,0 +1,84 @@
+# Informe: reconstrucción 3D del R.A.T.9 desde las rotaciones del instalador
+
+Fecha: 2026-10-16 · Máquina: Arch Linux, RTX 2070 SUPER 8 GB (sm_75), 31 GB RAM, 20 cores, 448 GB libres.
+Material: docs/original-ui/extracted-from-installer/ — 24 fotogramas @275x349 + 24 @280x341 (recurso del instalador `c9e4beb7`, giro de ~15°/paso, cámara fija elevada ~10°, fondo claro). Todo lo que sigue está MEDIDO, no supuesto.
+
+## 1. Estado real del pipeline 3D de la máquina
+
+| Componente | Estado | Evidencia |
+|---|---|---|
+| GPU / driver | OK. RTX 2070 SUPER, CUDA UMD 13.4, 7.6 GiB útiles | nvidia-smi |
+| torch (3 venvs) | OK. 2.14.1+cu130, `cuda=True`, capacidad (7,5) | test directo en cada venv |
+| spconv (comfyui-venv) | **FALLA: wheel solo-CPU**. forward CUDA → `RuntimeError ... not implemented for CPU ONLY build`. La ruta CPU sí convuelve | traceback ejecutado |
+| TRELLIS.2 (ComfyUI-TRELLIS2 0.2.19) | **NO EJECUTABLE HOY**. El nodo se registra al arrancar ComfyUI, pero el env aislado `~/.ce/.pixi/envs/trellis2-nodes` no existe y los kernels que importa el VAE no están: `flex_gemm_ap` ModuleNotFoundError; el `flex_gemm` instalado solo trae `grid_sample`; `o_voxel_vb_ap` es un shim vacío; `comfy_sparse_attn.ops` no existe. Pesos sí presentes (15 GB en ~/comfyui/models/trellis2 + 6 GGUF en ~/3d-tools/models/trellis2, este último del callejón sin salida GGUF) | imports ejecutados + log de arranque de ComfyUI |
+| ComfyUI | Arranca bien en comfyui-venv (server OK, 7793 MB VRAM) | boot test |
+| nvdiffrast | importa (0.4.0); contexto GL headless sin probar | — |
+| **Stable Fast 3D** | **FUNCIONA**. Repo en ~/3d-tools/stable-fast-3d con parches de memoria (pesos bf16 + SDPA por bloques en sf3d_safe.py), pesos descargados (3,8 GB en HF cache). Run completo en **18,5 s, pico 4,8 GB VRAM**, GLB texturizado. La sesión previa ya producía mesh.glb | ejecutado en esta sesión |
+| rembg/u2net | OK (CPU). 48 recortes en ~2 min | ejecutado |
+| onnxruntime-gpu (sf3d-venv) | roto para CUDA: falta libcudnn/libnvinfer → **rembg hay que fijarlo a CPUExecutionProvider** (parcheado run.py) | traceback |
+| upscayl-ncnn | Funciona en 2 s (280→1120 px). **TRAMPA confirmada en persona**: nombre de modelo inválido (`-n real-esrgan-x4plus`, que no existe en /usr/share/upscayl/models) devuelve imagen NEGRA silenciosa. Modelos válidos: remacri-4x, ultrasharp-4x, digital-art-4x, high-fidelity-4x, ultramix-balanced-4x | comparado gradiente: 0,0 negro vs 3,12 válido |
+| TripoSR | Repo + venv listos; **pesos NO descargados** (model.ckpt = 1,56 GB) | búsqueda en cachés |
+| COLMAP / Meshroom / MeshLab | **No instalados.** COLMAP no está en repos oficiales de Arch (solo AUR: 4.2.0-4, 7 votos). yay+gcc16+cmake+ninja disponibles para compilar | pacman -Si, AUR RPC |
+| Blender 5.2.2 | Binario arranca; **python embebido roto headless**: `No module named 'math'` (mismatch libpython/sistema tras actualización de python). bpy PyPI 5.2.2 es cp313 (esta máquina: sistema 3.14, venvs 3.11). Trabajo sin Blender posible vía renders numpy (se usó así) | ejecutado |
+| Disco | 448 GB libres — espacio no es problema | df |
+
+**Lo que FALLA hoy, en corto:** TRELLIS.2 (kernels sparse para cp311/torch2.14/sm75 no existen), spconv CUDA, onnxruntime CUDA en sf3d-venv, Blender headless. Todo lo demás funciona.
+
+## 2. Viabilidad de la fotogrametría multivista con las 48 vistas
+
+Qué hacen las vistas (medido con rembg + carve):
+- 24 pasos ≈ 15°/frame, elevación ≈ 10° en AMBAS series (búsqueda en grilla de elevación/offset: mejor IoU con θ=10°, φ0=3° y 12°).
+- Proporción ancho/alto de silueta: **ningún frame llega a 0,9** (máx 0,79–0,84): todas las vistas son oblicuas des de arriba, con un apéndide vertical giratorio ("cable") pegado encima. No hay vista lateral limpia ni baja ninguna.
+- El elemento superior GIRA con el objeto (no es overlay de UI: std de 45–27 entre frames) → contamina TODAS las siluetas.
+- Verificación extra en los 1832 ficheros extraídos: hay 384 sprites 280x340 más del mismo recurso (multiples colorways rojo/blanco/plata/negro intercalados), 72× 275x376, 72× 496x290 — **ninguna serie a mayor resolución ni con otra elevación**. El techo del material es este.
+
+El experimento decisivo (visual hull SIN SfM, ~20 líneas de numpy sobre los 48 cutouts):
+- Carve con rig conocido + refinado: **IoU silueta reproyectada 0,79 / 0,81 / 0,71 combinado** a 112³ voxeles.
+- La malla resultante (`hull/rat9_hull.glb`): proporciones L:H ≈ **2,1–2,3:1**, morro estrecho, cola ancha — **se lee como ratón (6/10 como bloqueo)**. La misma prueba con SF3D desde una foto dio proporciones L:H 0,78–0,84 (torreta), 3/10.
+
+Veredicto honesto por técnica:
+- **SfM clásico (COLMAP/Meshroom)**: caso casi degenerado — centros de cámara coplanarios (una sola latitud), objeto oscuro con brillos especulares que se mueven (la luz no gira con el objeto), 280 px de resolución. Riesgo alto de fallo/careo; podría rescatar algo si upscaledas 4x y limitas el match a pares consecutivos. No es la vía con mejor esperanza aquí.
+- **Hull por siluetas (rig conocido)**: probado, funciona, sin instalar nada. Es la única técnica que ya ha demostrado extraer geometría REAL de este material.
+- **Lo que el material NO puede dar**: la base del ratón (ninguna cámara la ve), concavidades (hueco de la rueda, juntas — el hull las rellena), y textura nítida (280 px origen; 4x remacri da 1120 px interpolados).
+
+## 3. Alternativas (ordenadas por probabilidad de merecer la pena)
+
+### A. Visual hull por siluetas + textura retroproyectada — la recomendada
+- Herramienta: script numpy propio (ya escrito y validado: `~/.hermes/cache/scratch/rat9/visual_hull.py`) + marching cubes (skimage, ya en sf3d-venv) + remallado `pynanoinstantmeshes` (ya en sf3d-venv).
+- Coste: **0 MB nuevos, 0 €, ya funciona**. Textura: retroproyectar 24–48 vistas upscaled 4x sobre los UVs del hull (posiciones de cámara conocidas del rig; sin SfM).
+- Riesgos: base plana inventada, concavidades perdidas (se modelan a mano), spike del "cable" (se limpia editando máscaras), textura blanda.
+
+### B. SfM/MVS clásica — solo si hace falta densa
+- COLMAP (AUR 4.2.0-4, ~500–700 MB con deps, build 15–40 min con 20 cores) o Meshroom binario Linux (descarga ≈1–1,5 GB con AliceVision; MVS necesita CUDA — sm_75 vale).
+- Por qué no primero: degeneración parcial del rig + brillos móviles + 280 px. Probabilidad de malla densa limpia: baja-media. Útil solo como refinado del hull, no como base.
+
+### C. Image-to-3D desde UNA vista — descartado para forma, útil para nada
+- **SF3D: corre hoy** (18,5 s; 4,8 GB VRAM; parche de memoria ya en el repo) pero la forma sale **3/10** con estas vistas: la vista oblicua superior es el peor caso, inventa profundidad, proporciones al revés. Descartado como generador de forma.
+- **TRELLIS.2**: bloqueado por arquitectura (kernels sparse inexistentes para cp311/torch2.14/CUDA13/sm75; probado con import exacto). Descartado hoy.
+- **TripoSR**: correría (fp16, 4–6 GB) pero con el mismo problema de entrada; pesos no descargados (1,56 GB). Mismo resultado esperable que SF3D.
+- **Hunyuan3D-2 / InstantMesh / SV3D**: más pesados (no caben o requieren compilar rasterizadores y descargas grandes) y mismo problema de entrada. Descartados.
+- Conclusión (c): el cuello de botella no es el motor, es la ENTRADA (una vista oblicua superior de 280 px de un objeto oscuro y brillante). Ningún image-to-3D la salva.
+
+### D. Camino intermedio (recomendado como variante del A)
+- Geometría = hull (real) + **SF3D solo como textura/aspecto** (su GLB texturizado existe y funciona) o mejor: retroproyección de las fotos reales sobre el hull, que es textura VERDADERA del objeto. Con Blender arreglado (tarball oficial ~350 MB, o flatpak ~2 GB) la proyección/inpainting es cómoda; sin Blender, el pintor numpy ya sirve para validar.
+
+## 4. Camino recomendado, paso a paso
+
+1. *(hecho, 10 min, 0 MB)* Cutouts de los 48 frames con rembg + escala 4x remacri.
+2. *(30–60 min, 0 MB)* Limpieza de máscaras: recortar el apéndice superior donde es fino (heurística de anchura de fila, ya esbozada) — repetir hull a N=160–192, suavizado gaussiano 1,5, marching cubes, decimar con pynanoinstantmeshes. Salida: **blockout GLB con proporciones reales** (el actual a 112³ ya da 6/10).
+3. *(opcional, ~350 MB)* Reparar Blender: tarball oficial de blender.org (el pacman está roto headless) → proyección de las 24 vistas 4x sobre el hull con poses del rig (θ≈10°, 15°/paso, centro=bbox) + inpaint entre vistas → **GLB con textura del objeto real**. Alternativa sin Blender: proyección numpy sobre UVs (trimesh/xatlas ya en sf3d-venv).
+4. *(opcional, 0 MB)* Pasada de belleza con la textura de SF3D sobre la geometría del hull corregida.
+- Salida final esperable: GLB/obj con malla 20–60k tris y textura 1–2k plausible pero blanda (fuente 280 px). Coste: 0 €, ~4–6 GB de nuevo disco solo si se arregla Blender; tiempos: 1–2 h de trabajo total.
+- Primer paso concreto (30 min): repetir el carve del hull con las máscaras limpiadas del apéndice superior a 160³ y mirar las 4 vistas — si el spike desaparece y la base queda bien terminada, el camino está confirmado.
+
+## 5. Qué falta para un modelo DECENTE (sin inflar expectativas)
+
+- **Cobertura polar**: el instalador solo da una banda de elevación (~10°). Sin vistas desde abajo o desde arriba, la base nunca se reconstruye — con ninguna técnica. Hace falta un segundo giro con la cámara baja (los sprites del instalador no lo traen: verificado) o fotos reales.
+- **Resolución**: 280 px es un techo físico. Una serie de fotos reales a ~2000 px del RAT9 físico (teléfono, mesa giratoria, 3 elevaciones, luz difusa, fondo contrastado) valdría más que todo el material del instalador y habilitaría COLMAP/Meshroom de verdad.
+- **El apéndice superior** ("cable"/mecanismo) en todas las vistas: sin separarlo, todo recorte/hull hereda un spike.
+- **Un modelo con arte del instalador**: si el objetivo final es un modelo visual para un frontend de configuración, otra vía seria es RETRO-INGENIERÍA del recurso 3D original (el instalador renderiza un modelo real al vuelo; el .dll/.resource puede contener la malla o sprites más finos que los PNG extraídos — no se ha agotado esa mina; los 550x550 (61 ficheros) no han sido identificados).
+
+## Artefactos de esta sesión
+- Informe: este fichero (`docs/research/informe-3d.md`).
+- Parche: `~/3d-tools/stable-fast-3d/run.py` (rembg fijado a CPUExecutionProvider — onnxruntime CUDA roto en ese venv).
+- Experimentos y datos: `~/.hermes/cache/scratch/rat9/` (visual_hull.py, render_glb_trimesh.py, cutouts/, hull/rat9_hull.glb, masks/, params.json, renders/, sheets de contacto). Nada más tocado en rat9-config.

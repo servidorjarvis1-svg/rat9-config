@@ -41,17 +41,41 @@ FLANK_W = [
 ]
 
 # Controles del panel lateral: (id, etiqueta, uso, y0, y1)
+#
+# Las alturas NO son a ojo: se midieron sobre el render. Se saco de la imagen el
+# centro de cada pieza en % de la longitud del raton (0% = morro, 100% = talon) y
+# se convirtio a unidades del esquema con y_esq = 60 + pct * 640:
+#
+#     boton de modos .......... 19%  ->  182      rueda principal ..... 18% -> 175
+#     lateral rojo ............ 39%  ->  310      (el dibujo ya la tenia en 176)
+#     lateral plateado sup. ... 49%  ->  374
+#     RULETA DEL PULGAR ....... 58%  ->  431
+#     lateral plateado inf. ... 65%  ->  476
+#
+# El 58% de la ruleta cuadra con la banda estriada que tools/medir-flanco.py mide
+# por su cuenta en el flanco (y_esq 394..477, centro 435): dos metodos distintos
+# dan lo mismo, asi que el dato es bueno. Y el 18% de la rueda principal tambien
+# cuadra con el 176 que ya usaba el dibujo, lo que confirma la conversion.
+#
+# Antes de medir, todo el flanco estaba DEMASIADO ADELANTE (modos en 151, laterales
+# en 152-400, ruleta en 398-516): de ahi que no casara con la imagen por mas que
+# se retocaran las llamadas.
 SIDE_CONTROLS = [
-    ("btn-precision", "Botón de precisión",  8, 152, 258),
-    ("btn-forward",   "Adelante",            5, 276, 330),
-    ("btn-back",      "Atrás",               4, 346, 400),
+    ("btn-precision", "Botón de precisión",  8, 292, 328),
+    ("btn-forward",   "Adelante",            5, 356, 392),
+    ("btn-back",      "Atrás",               4, 458, 494),
 ]
-THUMB_WHEEL = ("thumb", 6, 7, 398, 516)          # y0, y1; uso 6 = CW, 7 = CCW
-MODE_BTN = ("mode", 9, 424, 500, 3)              # uso, y0, y1 (los y se recalculan)
+THUMB_WHEEL = ("thumb", 6, 7, 390, 475)          # medido: banda estriada 394-477
+MODE_BTN = ("mode", 9, 144, 220)                # uso, y0, y1 (junto al clic izq.)
 MODE_BTN_HW = 24.0                              # ancho del boton de modos
 
-# Rueda central
-WHEEL_X_HALF, WHEEL_Y0, WHEEL_Y1 = 21.0, 100.0, 252.0
+# Rueda central. Las alturas estan MEDIDAS sobre el render a zoom: el cilindro
+# gris va de y_img 204 a 356, que en unidades del esquema es y_esq 114..216.
+# Antes ponia 100..252: el centro estaba casi bien (176 contra 165) pero el alto
+# era un 50% mayor, y por eso el contorno del esquema sobresalia por encima del
+# cilindro de verdad. (Ojo con medirla por brillo: la carcasa que la rodea es gris
+# claro y sale mas brillante que la rueda; lo que la define es su posicion.)
+WHEEL_X_HALF, WHEEL_Y0, WHEEL_Y1 = 21.0, 112.0, 218.0
 PLATE_Y0, PLATE_Y1 = 64.0, 300.0                 # botones principales
 PALM_Y0 = 302.0                                  # reposamanos
 
@@ -350,7 +374,7 @@ def anclajes() -> list[tuple[int, str, float, float]]:
     t0, t1 = THUMB_WHEEL[3], THUMB_WHEEL[4]
     tm = (t0 + t1) / 2
     cy = {u: (y0 + y1) / 2 for _z, _l, u, y0, y1 in SIDE_CONTROLS}
-    my = (PLATE_Y0 + 26 + PLATE_Y0 + 152) / 2
+    my = (MODE_BTN[2] + MODE_BTN[3]) / 2
     return [
         (1,  "IZQ.",     (_EJE + left_edge(ym)) / 2,   ym),
         (2,  "DER.",     (_EJE + right_edge(ym)) / 2,  ym),
@@ -544,8 +568,7 @@ def build_svg() -> str:
     # del software (el selector rojo/azul/purpura), no piezas del raton: pintarlos
     # sobre el aparato era inventarselos. Y como caian encima de la rueda del
     # pulgar (ambos ocupaban y 398-516), las cinco llamadas se apelotonaban.
-    _mzid, usage_modo, _my0, _my1, _n = MODE_BTN
-    my0, my1 = PLATE_Y0 + 26, PLATE_Y0 + 152
+    _mzid, usage_modo, my0, my1 = MODE_BTN
     ys_modo = sample(my0, my1, 9)
     modo_d = band_shape([(left_edge(y) + 3, y) for y in ys_modo],
                         [(left_edge(y) + 3 + MODE_BTN_HW, y) for y in reversed(ys_modo)])

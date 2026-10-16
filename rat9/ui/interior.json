@@ -1,0 +1,210 @@
+{
+  "origen": "raton-original.png",
+  "unidades": "fracciones 0..1 de la caja (x, y por eje)",
+  "caja_px": [
+    10,
+    124,
+    685,
+    954
+  ],
+  "costura_central": {
+    "u_izq": 0.5241,
+    "u_der": 0.6599,
+    "y0_v": 0.0021,
+    "y1_v": 0.4654,
+    "metodo": "pico de |d/dx| por fila en el morro (izq) y en el morro+tramo bajo la rueda (der), mediana de filas; y1 = subida sostenida de la columna del eje bajo la ranura; y0 = primera fila con pico (29 filas válidas)"
+  },
+  "rueda": {
+    "x0_u": 0.5518,
+    "x1_u": 0.6292,
+    "y0_v": 0.0901,
+    "y1_v": 0.2233,
+    "metodo": "columnas = guías brillantes (380, 387) y (442, 450), rueda entre ellas; filas = labio->oscuro por arriba (x>388) y caída al pozo (lum<0.18) por abajo"
+  },
+  "ranura": {
+    "x0_u": 0.5401,
+    "x1_u": 0.6423,
+    "y0_v": 0.0901,
+    "y1_v": 0.2736,
+    "metodo": "de guía a guía en x; y0 = tope de la rueda; y1 = paso pozo->carcasa en la franja central; labio medido por banda clara (366-464, y 124..210)",
+    "lip_x0_u": 0.5197,
+    "lip_x1_u": 0.6628,
+    "lip_y0_v": 0.0
+  },
+  "panel_lateral_izq": [
+    [
+      0.3491,
+      0.1686
+    ],
+    [
+      0.3585,
+      0.1693
+    ],
+    [
+      0.3679,
+      0.2
+    ],
+    [
+      0.3774,
+      0.2
+    ],
+    [
+      0.3868,
+      0.1942
+    ],
+    [
+      0.3962,
+      0.1942
+    ],
+    [
+      0.4057,
+      0.1956
+    ],
+    [
+      0.4151,
+      0.1971
+    ],
+    [
+      0.4245,
+      0.2131
+    ],
+    [
+      0.434,
+      0.2131
+    ],
+    [
+      0.4434,
+      0.2102
+    ],
+    [
+      0.4528,
+      0.2102
+    ],
+    [
+      0.4623,
+      0.2102
+    ],
+    [
+      0.4717,
+      0.2029
+    ],
+    [
+      0.4811,
+      0.1985
+    ],
+    [
+      0.4906,
+      0.1985
+    ],
+    [
+      0.5,
+      0.1971
+    ],
+    [
+      0.5094,
+      0.1942
+    ],
+    [
+      0.5189,
+      0.1912
+    ],
+    [
+      0.5283,
+      0.181
+    ],
+    [
+      0.5377,
+      0.1752
+    ],
+    [
+      0.5472,
+      0.1752
+    ],
+    [
+      0.5566,
+      0.1737
+    ],
+    [
+      0.566,
+      0.1737
+    ],
+    [
+      0.5755,
+      0.1737
+    ],
+    [
+      0.5849,
+      0.1723
+    ],
+    [
+      0.5943,
+      0.1723
+    ],
+    [
+      0.6038,
+      0.1723
+    ],
+    [
+      0.6132,
+      0.1723
+    ],
+    [
+      0.6226,
+      0.1708
+    ],
+    [
+      0.6321,
+      0.1723
+    ],
+    [
+      0.6415,
+      0.1723
+    ],
+    [
+      0.6509,
+      0.1737
+    ],
+    [
+      0.6604,
+      0.181
+    ],
+    [
+      0.6698,
+      0.1825
+    ],
+    [
+      0.6792,
+      0.2555
+    ],
+    [
+      0.6887,
+      0.2584
+    ],
+    [
+      0.6981,
+      0.2555
+    ],
+    [
+      0.7075,
+      0.2467
+    ],
+    [
+      0.717,
+      0.2234
+    ],
+    [
+      0.7264,
+      0.1854
+    ],
+    [
+      0.7358,
+      0.1818
+    ]
+  ],
+  "panel_lateral_izq_metodo": "centro del valle oscuro (suavizado 9, umbral 0.20) de mayor área en la banda del flanco, por fila cada 9 px, mediana de 3; 42 filas, descartadas: 13",
+  "no_medido": [
+    "PALM_Y0 (costura del reposamanos): línea diagonal con contraste insuficiente y sin continuidad de fila a fila; se queda como constante",
+    "borde inferior de las tapas en los flancos: en la imagen es diagonal (~y477 en el flanco izq, ~y562 en el eje, ~y629 a la derecha); la y1_v medida es la del EJE, donde la costura es nítida",
+    "posición de los mandos laterales (precisión, adelante/atrás, rueda del pulgar, perfiles): quedan como constantes del generador"
+  ]
+}
