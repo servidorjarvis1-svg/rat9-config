@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 PUBLISH-CHECKLIST.md
 HANDOFF.md
+rat9/assets/
+
+# Fotos de referencia del hardware: material de terceros, no se distribuye.
+docs/hardware-ref/*.jpg
+docs/hardware-ref/*.png
+docs/hardware-ref/*.jpeg
+docs/hardware-ref/*.webp
