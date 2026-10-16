@@ -454,15 +454,21 @@ def caja_llamada(x: float, y: float, w: float, h: float) -> str:
             f"L {x + w:.0f} {y + h - c:.0f} L {x + w - c:.0f} {y + h:.0f} Z")
 
 
-def svg_badges() -> str:
+def svg_badges() -> tuple[str, str]:
     """Cajas en columna + linea con codo + punto de anclaje.
+
+    Devuelve DOS grupos y no uno, y el motivo es la lectura: las lineas salen del
+    borde del raton y, dibujadas encima, cruzaban la rueda y los botones y
+    ensuciaban justo lo que senalan. Van por DETRAS del cuerpo, que es lo que se
+    hace en un plano tecnico: la guia llega al canto y el punto de anclaje marca
+    la pieza por dentro. Asi no tapan nada.
 
     Las llamadas se ORDENAN por la altura de su anclaje, no por numero de uso.
     Si no, la linea de la llamada 4 sale de una caja alta y baja hasta un control
     bajo, y cruza por delante de las de abajo: con once lineas aquello parecia
-    una marana. Ordenadas por altura, salen abanico y no se pisan.
+    una marana.
     """
-    out = []
+    guias, puntos = [], []
     for i, (uso, nombre, ax, ay) in enumerate(sorted(anclajes(), key=lambda t: t[3])):
         by = CAJA_Y0 + i * CAJA_PASO
         cy = by + CAJA_H / 2
@@ -471,19 +477,20 @@ def svg_badges() -> str:
         # diagonal al anclaje. El tramo recto es lo que le da el aire de lamina
         # tecnica; en diagonal directa parecia otra cosa.
         mx = max(ax + 26, 250.0)
-        out.append(
+        guias.append(
             f'  <path d="M {CAJA_X0:.0f} {cy:.0f} L {mx:.0f} {cy:.0f} '
             f'L {ax + 9:.0f} {ay:.0f}" fill="none" stroke="var(--mg-accent)" '
             f'stroke-width="1.3" stroke-linejoin="miter"/>\n'
-            f'  <circle cx="{ax:.0f}" cy="{ay:.0f}" r="4" '
-            f'fill="var(--mg-accent)"/>\n'
             f'  <path d="{caja_llamada(CAJA_X0, by, CAJA_W, CAJA_H)}" '
             f'fill="{relleno}" stroke="var(--mg-accent)" stroke-width="1.3"/>\n'
             f'  <text class="cal-n" x="{CAJA_X0 + 10:.0f}" y="{cy + 4:.0f}" '
             f'font-size="11.5">{uso:02d}</text>\n'
             f'  <text class="cal-t" x="{CAJA_X0 + 27:.0f}" y="{cy + 4:.0f}" '
             f'font-size="10">{nombre}</text>')
-    return "\n".join(out)
+        puntos.append(
+            f'  <circle cx="{ax:.0f}" cy="{ay:.0f}" r="4.5" '
+            f'fill="var(--mg-accent)" stroke="#0b0e14" stroke-width="1.2"/>')
+    return "\n".join(guias), "\n".join(puntos)
 
 
 # ─── capa para superponer al render ───────────────────────────────────────────
@@ -570,7 +577,9 @@ def build_svg() -> str:
         if side == "l":
             interior_x = eje - 3
         elif _u_der is not None:
-            interior_x = _map_x(_u_der) + 3
+            # la linea derecha se MIDIO como linea: el trazo cae justo sobre
+            # ella, sin el +3 que separaba las tapas del eje inventado
+            interior_x = _map_x(_u_der)
         else:
             interior_x = eje + 3
         inner = [(interior_x, y) for y in reversed(ys)]
@@ -762,6 +771,8 @@ def build_svg() -> str:
         f'y2="{y:.1f}"/>'
         for y in sample(WHEEL_Y0 + 18, WHEEL_Y1 - 18, 5))
 
+    guias_badges, puntos_badges = svg_badges()
+
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 800"
      class="mouse-diagram" role="img"
      aria-label="Diagrama del Mad Catz R.A.T.9, vista superior esquemática">
@@ -816,6 +827,13 @@ def build_svg() -> str:
     <stop offset="100%" stop-color="#000000" stop-opacity=".68"/>
   </radialGradient>
 </defs>
+
+<!-- guias de llamada: cajas y lineas. Van ANTES del cuerpo A PROPOSITO: las
+     lineas tienen que pasar por detras del raton. Dibujadas encima cruzaban la
+     rueda y los botones y ensuciaban lo que senalan. -->
+<g id="guias">
+{guias_badges}
+</g>
 
 <!-- casco -->
 <path d="{shell}" fill="url(#g-shell)" stroke="#3a4761" stroke-width="1.6"/>
@@ -907,9 +925,10 @@ def build_svg() -> str:
 
 <!-- botones de perfil -->
 {mode_svg}
-<!-- llamadas numeradas: el numero es el uso HID que reporta el firmware -->
-<g id="badges">
-{svg_badges()}
+<!-- puntos de anclaje: estos SI van encima, y son lo unico de la llamada que
+     tiene que ir encima. Marcan la pieza concreta. -->
+<g id="anclajes">
+{puntos_badges}
 </g>
 </svg>
 '''
