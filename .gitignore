@@ -28,3 +28,7 @@ rat9/ui/assets/giro/
 # Derivados pesados del 3D (se regeneran con tools/visual-hull*.py)
 3d/hull/
 3d/masks/
+
+# Fotogramas ampliados y mascaras preparados para el SfM: mismo material del
+# instalador. Se regeneran con tools/sfm-poses.sh a partir de 3d/masks/.
+3d/sfm/
