@@ -97,25 +97,86 @@ el valor va como **u32 en little-endian, X e Y por separado**. Y hay una llamada
 [10..]   XML del perfil en UTF-16LE
 ```
 
-## 6. Lo que FALTA, y por qué
+## 6. El driver: el mensaje de 5 bytes, CONFIRMADO en el código
 
-**El perfil viaja por IOCTL al driver de Windows, y el troceado en mensajes USB lo
-hace el driver, no el userland.** Por eso aquí no aparece: está en
-`_hid_0738_1709.sys` (180 KB, kernel x64), no en el .NET.
+Se desensambló `_hid_0738_1709.sys` (180.928 bytes, kernel x64, KMDF) y se siguió el
+camino real de escritura. Lo que apareció es mejor de lo que se esperaba.
 
-Lo que se sabe del driver por los strings y el análisis previo: manda al dispositivo
-**mensajes de 5 bytes `{cmd:u8, w1:u16, w2:u16}`** dentro de su propio URB
-(`{Length=0x88, Function=0x17}`). Cerrar el dispatcher de ahí es lo que falta para
-poder enviar un perfil desde Linux sin adivinar.
+**La fórmula de los IOCTL** sale del propio userland:
 
-Alternativas, por orden de sensatez:
-1. **Terminar de leer el driver** (`objdump`/`radare2` sobre el .sys) para sacar los
-   `cmd` y el significado de `w1`/`w2`. Es la vía limpia y no toca el ratón.
-2. **Capturar el USB de verdad** mientras el software manda un perfil. Necesita un
-   Windows con el ratón conectado; Wine no sirve porque el software depende de un
-   driver de kernel.
-3. **Probar a ciegas** por el canal `SET_REPORT` ya confirmado con el candidato
-   `CommandSetFeature + DeviceProfileProgramming`. Es la vía más rápida y la más
-   arriesgada: **nunca enviar la orden de guardar en EEPROM** hasta tener el framing
-   verificado, y tener presente que `detachKernelDriver` puede dejar el `hidraw`
-   huérfano hasta reconectar el ratón.
+```csharp
+static uint CtlCode(uint code) => CtlCode(code, 34u, 0u, 0u);
+static uint CtlCode(uint code, uint device, uint method, uint access)
+    => (device << 16) | (access << 14) | (code << 2) | method;
+```
+
+Con eso, el código exacto de cada operación (útil para seguir el rastro en el driver):
+
+| operación | code | IOCTL |
+|---|---|---|
+| `SetProfile` | 2560 | `0x00222800` |
+| `GetProfile` | 2561 | `0x00222804` |
+| `ClearProfile` / `Activate` | 2562 / 2563 | `0x00222808` / `0x0022280C` |
+| `IsProfileActive` | 2570 | `0x00222828` |
+| **`WriteVendorCommand`** | 2800 | `0x00222BC0` |
+| `ReadVendorCommand` | 2801 | `0x00222BC4` |
+| **`VendorInCommand`** | 2802 | `0x00222BC8` |
+| `GetDpi` / `SetDpi` | 3362 / 3363 | `0x00223488` / `0x0022348C` |
+| `ResetToDefaults` / `SaveDPIModesToEEPROM` | 3368 / 3369 | `0x002234A0` / `0x002234A4` |
+| `Get/SetPrecisionPercent` | 3597 / 3598 | `0x00223834` / `0x00223838` |
+
+El dispatcher del driver resta el IOCTL recibido y salta (`sub $0x222800,%r8d; je …`),
+así que cada operación tiene su rama localizable.
+
+### El hallazgo: `VendorInCommand` construye el mensaje de 5 bytes
+
+En `0x14b60`, el manejador de `VendorInCommand` (el que manda un comando en crudo al
+aparato) hace esto:
+
+```asm
+14b97: cmp    $0x5,%eax          ; exige tamaño EXACTAMENTE 5
+14ba0: mov    (%r9),%al          ; byte 0    -> variable
+14ba3: mov    %al,0x20(%rsp)
+14ba7: movzwl 0x1(%r9),%eax      ; bytes 1-2 -> u16
+14bac: mov    %ax,0x21(%rsp)
+14bb1: movzwl 0x3(%r9),%eax      ; bytes 3-4 -> u16
+14bb6: mov    %ax,0x23(%rsp)
+```
+
+Es decir: **`{cmd:u8, w1:u16, w2:u16}` — 5 bytes, little-endian, y exactamente 5, ni más
+ni menos.** Lo que en sesiones anteriores era una sospecha sacada de los strings del
+driver, aquí está confirmado en el código que habla con el aparato.
+
+### El manejador de `SetProfile`
+
+`0x1f0ee` → `0x1fc34`. Comprueba que el búfer tenga al menos 12 bytes, y luego:
+
+- `(%r9)` → primer u32 = **slot**
+- `0x4(%r12)` → segundo u32 = **máscara/GUID**
+- `cmpw $0x1,0x8(%r12)` → u16 en el offset 8
+- `lea 0xa(%r12),%r9` → **el XML empieza en el offset 10**
+
+Eso **confirma la estructura del perfil** que se dedujo del .NET: `[slot u32][máscara
+u32][2 bytes][XML UTF-16LE]`.
+
+### Cómo se encadena con lo confirmado contra el hardware
+
+El canal de escritura **verificado en la unidad** es `SET_REPORT` de feature report
+(`0x21` / `0x09` / `wValue 0x0300`, report ID 0), que acepta de 8 a 64 bytes. El
+mensaje del driver son 5 bytes: encaja en ese mismo report. O sea que las dos piezas
+—el canal de transporte (verificado en hardware) y el contenido (confirmado en el
+driver)— son compatibles.
+
+## 7. Lo que queda exactamente
+
+1. **Los valores de `cmd`** y el significado de `w1`/`w2` en cada operación. Se sacan
+   siguiendo las ramas del dispatcher que construyen el mismo búfer de 5 bytes
+   (el camino de `Module_Programming` para el perfil).
+2. **Cómo van montados los 5 bytes dentro del feature report**: si el report es de 8,
+   16 o 64 bytes, y si hay prefijo. El `Capabilities.FeatureReportByteLength` del
+   aparato lo dice, y se puede leer sin escribir nada.
+3. Una vez con eso: **probar con el ratón**, empezando por algo visible y reversible.
+
+**Nada de esto se ha probado todavía contra el hardware.** Todo lo de esta sección es
+análisis estático: código desensamblado, sin tocar el aparato.
+
