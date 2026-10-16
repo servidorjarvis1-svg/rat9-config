@@ -219,7 +219,67 @@ que es la mejor señal de que la lectura es correcta.
    (la luminosidad o un nivel de DPI), y **nunca** la orden de guardar en EEPROM hasta
    tener todo verificado.
 
-**Nada de esto se ha probado contra el hardware.** Todo es análisis estático: código
-desensamblado, sin tocar el aparato.
+## 10. El comando de escritura del DPI — ENCONTRADO
+
+Se localizó el dispatcher del grupo DPI (`0x29d64`, `sub $0x223480`) y de ahí el
+manejador de `SetDpi` (`0x22348C` → `0x2a30c`) y el de "aplicar al aparato"
+(`0x2a61c`). **Aquí está el comando**, en ensamblador:
+
+```asm
+; ── EJE X ─────────────────────────────────────────────────────────────
+2a65f: movzwl 0x4(%rdi),%eax     ; el DPI de X del registro (u16)
+2a667: sub    0x30(%rbx),%ecx    ; resta el MÍNIMO
+2a67d: divl   0x38(%rbx)         ; divide por el PASO  -> índice normalizado
+2a684: mov    $0x100,%r8d        ; wValue alto = 0x100  (eje X)
+2a68a: mov    $0x90,%edx         ; bRequest = 0x90
+2a68f: or     %ax,%r8w           ; wValue = 0x100 | índice
+2a693: call   0x148f4            ; ← SE ENVÍA
+
+; ── EJE Y ─────────────────────────────────────────────────────────────
+2a6c0: mov    $0x200,%r8d        ; wValue alto = 0x200  (eje Y)
+2a6c6: mov    $0x90,%edx         ; bRequest = 0x90
+2a6cb: or     %ax,%r8w           ; wValue = 0x200 | índice
+2a6cf: call   0x148f4            ; ← SE ENVÍA
+
+; ── un tercero ────────────────────────────────────────────────────────
+2a6d4: movzwl 0x8(%rdi),%r8d     ; el campo +8 del registro
+2a6dd: mov    $0xb8,%edx         ; bRequest = 0xB8
+2a6e2: call   0x148f4            ; ← SE ENVÍA
+```
+
+Y `0x148f4` confirma que los dos argumentos son de 16 bits
+(`movzwl %r8w,%esi` y `movzwl %dx,%ebp`) antes de montar la petición: o sea,
+**wValue y bRequest**.
+
+### Lo que dice esto
+
+| operación | bmRequestType | bRequest | wValue |
+|---|---|---|---|
+| **fijar DPI, eje X** | (envío) | **`0x90`** | `0x100 \| índice` |
+| **fijar DPI, eje Y** | (envío) | **`0x90`** | `0x200 \| índice` |
+| campo +8 del registro | (envío) | `0xB8` | el valor |
+
+donde `índice = (dpi − mínimo) / paso`, con el mínimo y el paso guardados en el objeto
+del driver (`0x30` y `0x38`). Esa normalización encaja con el `DPI = byte1 × 25 + 25`
+que ya estaba en el README.
+
+**Y el dato gordo**: el `bRequest` **es el mismo `0x90` que el de lectura**. Lo único
+que cambia es la dirección. Eso explica por qué en su día fallaron las pruebas de
+escritura: se probó el vendor OUT con `bRequest 0x91` (el de la wiki de MayeulC) y
+daba PIPE — **nunca se probó `0x40` con `bRequest 0x90`**, que es justo el gemelo de
+dirección del que sí lee.
+
+### Lo que aún no está fijado
+
+- **El `bmRequestType` exacto del envío** (se deduce `0x40`, vendor OUT, pero el
+  descriptor se monta dentro de la fontanería de WDF y no se ve el byte literal).
+- **El `wIndex` de escritura** (el de lectura lleva el registro: `0x74`, `0xBA`; en
+  escritura el "registro" parece ir codificado en los bits altos del `wValue`, así que
+  probablemente sea 0 o el nivel).
+
+Los dos se resuelven con **una sola prueba contra el ratón**, empezando por algo
+reversible.
+
+**Nada de esto se ha probado contra el hardware.** Todo sigue siendo análisis estático.
 
 
