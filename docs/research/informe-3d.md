@@ -210,3 +210,59 @@ donde el ratón gira al arrastrar. Es exactamente lo que hacía el software orig
 `3d/` en el repo (scripts, las 48 máscaras, malla y parámetros; los binarios van en
 `.gitignore`), porque `~/.hermes/cache/scratch/` **se poda a las 24 h** y se habría
 perdido. La herramienta reproducible es `tools/visual-hull.py`.
+
+---
+
+## TERCERA ADDENDA — veredicto final del 3D: con este material NO hay modelo
+
+Se recorrieron los tres caminos que quedaban abiertos. Los tres están cerrados, y ahora
+con números.
+
+### 1. SfM (COLMAP 4.2, instalado para esto) — FALLA
+Serie 1, 24 vistas, con máscaras y a 2x:
+
+| medida | valor | lo que haría falta |
+|---|---|---|
+| puntos por imagen | **594** | miles |
+| correspondencias por par | **14,2** | cientos |
+| pares con ≥8 inliers | **70 de 276** | la mayoría |
+| imágenes con pose | **0** | ≥ 20 |
+
+COLMAP no arranca ni la reconstrucción: *"No good initial image pair found"*.
+
+**Por qué:** el ratón es plástico liso, oscuro y brillante. Lo único que un detector de
+puntos encuentra son los **brillos especulares**, y esos se mueven con la CÁMARA, no con
+el objeto: entre dos vistas no corresponden al mismo punto de la superficie. Sin
+correspondencias no hay triangulación, y sin triangulación no hay ni poses ni geometría.
+
+### 2. Extractores aprendidos (ALIKED) — no disponibles
+COLMAP 4.2 los trae, pero **exigen ONNX Runtime en tiempo de compilación** y el build de
+esta máquina se hizo con `-DONNX_ENABLED=OFF`. Solo SIFT está disponible. Recompilarlo con
+ONNX son otros ~20–30 min y, con 594 puntos y brillos móviles como única textura, no hay
+razón para esperar que cambie el resultado.
+
+### 3. El hull con el rig correcto — no cuadra, y NO es un fallo de medida
+El rig está medido y es el correcto (rodadura sobre el eje largo). Pero al tallar con él
+sale IoU **0,20**, frente al 0,79 del rig equivocado. Se descartaron dos explicaciones
+antes de darlo por perdido:
+
+- **No es la forma de medir el IoU.** Se sospechó que proyectar los vóxeles como puntos
+  sueltos hundiera la medida; rellenando la silueta sale 0,196 contra 0,200. Igual.
+- **No es el centro de alineación.** Se probó a alinear por centro de masa en vez de por
+  centro de caja (que se desplaza cuando aparece la aleta): 0,206 contra 0,200; y barriendo
+  fase y sentido, el máximo es 0,206. Tampoco.
+
+Queda un fallo de fondo sin localizar en esa implementación. **Se deja dicho como lo que
+es: sin resolver, no resuelto.**
+
+### Veredicto
+**Con estos 48 fotogramas no hay modelo 3D, y no es cuestión de método ni de cómputo.**
+La prueba decisiva la da COLMAP: **14 puntos correspondientes por par de imágenes**. Con
+eso no reconstruye ninguna técnica — ni hull, ni SfM, ni ninguna otra. El techo lo pone la
+textura del material, no el algoritmo. Es el mismo muro que ya avisaba el informe por
+otra vía, ahora medido.
+
+Lo único que lo desbloquearía: **fotos reales del R.A.T.9 físico** — móvil, mesa
+giratoria, 2–3 alturas de cámara, luz difusa y fondo mate y contrastado. Con textura de
+verdad SIFT encuentra miles de puntos en vez de 594, y COLMAP ya está instalado y listo
+(`tools/sfm-poses.sh`).
