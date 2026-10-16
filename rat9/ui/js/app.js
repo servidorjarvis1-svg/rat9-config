@@ -258,6 +258,14 @@ const App = (() => {
     }
     conectarGiro();
     await comprobarGiro();
+    // Vista inicial por parametro: ?vista=giro. Va DESPUES de comprobarGiro() para
+    // que el boton ya sepa si los fotogramas estan; si no estan, no se ofrece y esto
+    // no hace nada raro. OJO: el valor definitivo se fija al final de arrancar(),
+    // porque alli estaba la linea que pisaba esto (figura = 'original'|'esquema').
+    const vista0 = ['esquema', 'original', 'superpuesto', 'giro']
+      .includes(new URLSearchParams(location.search).get('vista'))
+      ? new URLSearchParams(location.search).get('vista') : null;
+    pintarFigura();
 
     Diagram.on((tipo, id) => {
       if (tipo !== 'seleccion') return;
@@ -286,8 +294,10 @@ const App = (() => {
 
     await refrescar();
     pintarVista();
-    // Arrancamos en el Panel: su figura por defecto es el render del producto
-    figura = vista === 'panel' ? 'original' : 'esquema';
+    // Arrancamos en el Panel: su figura por defecto es el render del producto.
+    // Si la URL trae ?vista=, MANDA ESO: sirve para abrir la app en una vista
+    // concreta sin tener que pulsar el boton (y para poder comprobarla).
+    figura = vista0 || (vista === 'panel' ? 'original' : 'esquema');
     pintarFigura();
 
     temporizador = setInterval(refrescar, REFRESCO_MS);

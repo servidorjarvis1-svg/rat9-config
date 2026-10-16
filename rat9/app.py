@@ -35,6 +35,11 @@ def parse_and_size(argv):
     p.add_argument('--port', type=int, default=8766, help='puerto local (default 8766)')
     p.add_argument('--dev', action='store_true',
                    help='console.log en stdout + devtools al arrancar')
+    # Abrir en una vista concreta: esquema, original, superpuesto o giro. Sirve para
+    # comprobar una vista sin tener que pulsar el boton (y para dejar la app como
+    # quieras al arrancar).
+    p.add_argument('--vista', choices=['esquema', 'original', 'superpuesto', 'giro'],
+                   help='vista con la que arranca la app')
     a = p.parse_args(argv)
     w, h = (1180, 780)
     if a.win:
@@ -138,8 +143,11 @@ class Rat9App(Gtk.Application):
         self.wv.connect('load-failed', self.on_load_failed)
         self.wv.connect('decide-policy', self.on_decide_policy)
         self.wv.connect('web-process-terminated', self.on_webproc_dead)
-        self.wv.load_uri('http://127.0.0.1:%d/ui/index.html' % self.port)
-        print('rat9-config: http://127.0.0.1:%d/ui/index.html' % self.port)
+        _url = 'http://127.0.0.1:%d/ui/index.html' % self.port
+        if self.opts.vista:
+            _url += '?vista=' + self.opts.vista
+        self.wv.load_uri(_url)
+        print('rat9-config: %s' % _url)
 
         tv.set_content(self.wv)
         self.win.set_content(tv)

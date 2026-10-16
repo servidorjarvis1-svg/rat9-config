@@ -58,17 +58,25 @@ FLANK_W = [
 # dan lo mismo, asi que el dato es bueno. Y el 18% de la rueda principal tambien
 # cuadra con el 176 que ya usaba el dibujo, lo que confirma la conversion.
 #
-# Antes de medir, todo el flanco estaba DEMASIADO ADELANTE (modos en 151, laterales
-# en 152-400, ruleta en 398-516): de ahi que no casara con la imagen por mas que
-# se retocaran las llamadas.
+# LOS TRES LATERALES VAN JUNTOS, no repartidos. En el render se ven como una fila
+# compacta separada por juntas finas, no con huecos entre ellos: por eso ahora son
+# tres tramos seguidos con 6 unidades de junta, y no tres piezas sueltas.
 SIDE_CONTROLS = [
-    ("btn-precision", "Botón de precisión",  8, 292, 328),
-    ("btn-forward",   "Adelante",            5, 356, 392),
-    ("btn-back",      "Atrás",               4, 458, 494),
+    ("btn-precision", "Botón de precisión",  8, 300, 352),
+    ("btn-forward",   "Adelante",            5, 352, 404),
+    ("btn-back",      "Atrás",               4, 404, 456),
 ]
 THUMB_WHEEL = ("thumb", 6, 7, 390, 475)          # medido: banda estriada 394-477
 MODE_BTN = ("mode", 9, 144, 220)                # uso, y0, y1 (junto al clic izq.)
 MODE_BTN_HW = 24.0                              # ancho del boton de modos
+
+# La RULETA DEL PULGAR va METIDA HACIA DENTRO, no pegada al canto. Medido sobre el
+# render: su centro cae al 34% del ancho del raton desde el borde izquierdo, con
+# los botones laterales por FUERA de ella (en la banda del canto) y solapando en
+# altura. Antes se dibujaba en el centro de la banda del flanco, que esta al 10%
+# del ancho: pegada al borde. De ahi que no cuadrara con la imagen.
+RULETA_U = 0.34        # centro de la ruleta, en fraccion del ancho del raton
+RULETA_R = 27.0        # radio: ~7,5% del ancho, o sea unos 10 mm en el aparato real
 
 # Rueda central. Las alturas estan MEDIDAS sobre el render a zoom: el cilindro
 # gris va de y_img 204 a 356, que en unidades del esquema es y_esq 114..216.
@@ -178,6 +186,16 @@ def right_edge(y: float) -> float:
     return CX + body_half(y)
 
 
+def centro_ruleta(y: float) -> float:
+    """Centro de la RULETA DEL PULGAR, medido: al 34% del ancho del raton.
+
+    No es el centro de la banda del flanco (que esta al 10% y la pega al canto):
+    en el render la ruleta esta claramente metida hacia dentro, con los botones
+    laterales por fuera de ella y solapando en altura.
+    """
+    return left_edge(y) + RULETA_U * (right_edge(y) - left_edge(y))
+
+
 def flank_inner(y: float) -> float:
     """Borde interior del panel lateral."""
     if _INTERIOR is not None and _INTERIOR.get("panel_lateral_izq"):
@@ -279,6 +297,39 @@ def arco_flecha(cx: float, cy: float, r: float, sentido: int = 1,
              f"L {ax + nx * p * .62 - tx * p * .34:.1f} "
              f"{ay + ny * p * .62 - ty * p * .34:.1f} Z")
     return d, punta
+
+
+def boton_en_flanco(y0: float, y1: float, inset: float = 6.0,
+                    radio: float = 15.0) -> str:
+    """Boton del panel lateral con los EXTREMOS REDONDEADOS.
+
+    Un boton lateral visto desde arriba es una pieza alargada de cantos curvos, no
+    un rectangulo. Con las esquinas rectas el dibujo parecia una caja pegada al
+    canto; el aparato real los tiene redondeados.
+
+    Se recorren los dos bordes del panel (asi la pieza NUNCA se sale, aunque el
+    panel se ensanche y se estreche) y en las filas cercanas a cada extremo se
+    estrecha el ancho siguiendo un arco, que es lo que redondea la punta.
+    """
+    ys = sample(y0, y1, 24)
+
+    def factor(y: float) -> float:
+        f = 1.0
+        for extremo in (y0 + radio, y1 - radio):
+            d = abs(y - extremo)
+            if d < radio:
+                f = min(f, math.sqrt(max(0.0, 1 - (d / radio) ** 2)))
+        return f
+
+    izq, der = [], []
+    for y in ys:
+        a = left_edge(y) + inset
+        b = flank_inner(y) - inset
+        centro = (a + b) / 2
+        mitad = (b - a) / 2 * factor(y)
+        izq.append((centro - mitad, y))
+        der.append((centro + mitad, y))
+    return band_shape(izq, list(reversed(der)))
 
 
 def rect_on_flank(y0, y1, inset=6.0) -> str:
@@ -439,8 +490,8 @@ def anclajes() -> list[tuple[int, str, float, float]]:
         (3,  "RUEDA",    _EJE,                         (WHEEL_Y0 + WHEEL_Y1) / 2),
         (4,  "ATRAS",    centro_fl(cy[4]),             cy[4]),
         (5,  "ADEL.",    centro_fl(cy[5]),             cy[5]),
-        (6,  "PULG CW",  centro_fl((t0 + tm) / 2),     (t0 + tm) / 2),
-        (7,  "PULG CCW", centro_fl((tm + t1) / 2),     (tm + t1) / 2),
+        (6,  "PULG CW",  centro_ruleta((t0 + tm) / 2), (t0 + tm) / 2),
+        (7,  "PULG CCW", centro_ruleta((tm + t1) / 2), (tm + t1) / 2),
         (8,  "PRECIS.",  centro_fl(cy[8]),             cy[8]),
         (9,  "MODOS",    left_edge(my) + 3 + MODE_BTN_HW / 2, my),
     ]
@@ -663,10 +714,11 @@ def build_svg() -> str:
                        f"{WHEEL_Y0 - 8:.0f}")
 
     # ── controles laterales ──────────────────────────────────────────────────
+    # Con los extremos REDONDEADOS: son piezas alargadas de cantos curvos, no cajas.
     side_svg = "\n".join(
         f'''  <g class="z" data-zone="{zid}" data-usage="{usage}" tabindex="0"
      role="button" aria-label="{label}">
-    <path class="hit" d="{rect_on_flank(y0, y1)}" fill="#252f3d"
+    <path class="hit" d="{boton_en_flanco(y0, y1, radio=min(16.0, (y1 - y0) / 2.6))}" fill="#252f3d"
           stroke="#0b0e14" stroke-width="2" stroke-linejoin="round"/>
   </g>''' for zid, label, usage, y0, y1 in SIDE_CONTROLS)
 
@@ -677,9 +729,11 @@ def build_svg() -> str:
     # rayas lee como boton con rejilla, no como rueda.
     _zid, u_cw, u_ccw, ty0, ty1 = THUMB_WHEEL
     mid = (ty0 + ty1) / 2
-    pw_cx = (left_edge(mid) + flank_inner(mid)) / 2
+    # METIDA HACIA DENTRO: al 34% del ancho, medido sobre el render. No en el centro
+    # de la banda del flanco (que esta al 10%), que es donde estaba y la pegaba al canto.
+    pw_cx = centro_ruleta(mid)
     pw_cy = mid
-    pw_rx = max(13.0, (flank_inner(mid) - left_edge(mid)) / 2 - 4)
+    pw_rx = RULETA_R
     pw_ry = (ty1 - ty0) / 2
 
     def media_elipse(arriba: bool) -> str:

@@ -103,6 +103,13 @@ const Diagram = (() => {
    *  sin resolver) el ratón simplemente NO APARECE y el navegador no dice nada. */
   function comprobarTamano(s) {
     requestAnimationFrame(() => {
+      // Si el contenedor está OCULTO a propósito (la vista activa es otra), medir
+      // 0x0 es lo correcto y no hay nada roto. Sin este filtro, arrancar la app en
+      // la vista Giro escupía un error falso que hacía perder el tiempo buscando
+      // un fallo inexistente.
+      const caja = s.closest('.hidden') || (s.parentElement
+        && s.parentElement.closest('.hidden'));
+      if (caja) return;
       const r = s.getBoundingClientRect();
       if (r.width < 8 || r.height < 8) {
         console.error('el diagrama ha quedado en '
