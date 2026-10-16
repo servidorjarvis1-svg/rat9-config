@@ -21,6 +21,23 @@ const App = (() => {
 
   const $ = (s) => document.querySelector(s);
 
+  /* ── figura del banco: esquema interactivo o ilustración ─────────────── */
+
+  let figura = 'esquema';
+
+  function pintarFigura() {
+    const esRender = figura === 'render';
+    $('#deviceFrame').classList.toggle('hidden', esRender);
+    $('#deviceFigure').classList.toggle('hidden', !esRender);
+    // La leyenda numerada es del ESQUEMA: los números señalan zonas del dibujo,
+    // y en la ilustración no hay zonas. Enseñarla ahí sería un número sin nada
+    // a lo que apuntar.
+    $('#numb').classList.toggle('hidden', esRender);
+    for (const b of document.querySelectorAll('[data-figura]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.figura === figura));
+    }
+  }
+
   /* ── avisos ───────────────────────────────────────────────────────────── */
 
   function aviso(texto, tono = '') {
@@ -89,12 +106,17 @@ const App = (() => {
   function ir(nueva) {
     if (!RENDER[nueva]) return;
     vista = nueva;
+    // La figura se elige segun para que estas: la ilustracion para MIRAR el
+    // dispositivo, el esquema (con sus zonas clicables) para TRABAJAR en el.
+    // El boton del banco lo puede cambiar; esto es solo el valor por defecto.
+    figura = nueva === 'panel' ? 'render' : 'esquema';
     for (const b of document.querySelectorAll('.rail-item')) {
       const activa = b.dataset.view === nueva;
       if (activa) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
     }
     pintarVista();
+    pintarFigura();
   }
 
   /* ── ciclo de estado ──────────────────────────────────────────────────── */
@@ -149,6 +171,9 @@ const App = (() => {
     for (const b of document.querySelectorAll('.rail-item')) {
       b.addEventListener('click', () => ir(b.dataset.view));
     }
+    for (const b of document.querySelectorAll('[data-figura]')) {
+      b.addEventListener('click', () => { figura = b.dataset.figura; pintarFigura(); });
+    }
 
     Diagram.on((tipo, id) => {
       if (tipo !== 'seleccion') return;
@@ -170,6 +195,9 @@ const App = (() => {
 
     await refrescar();
     pintarVista();
+    // Arrancamos en el Panel: su figura por defecto es la ilustración
+    figura = vista === 'panel' ? 'render' : 'esquema';
+    pintarFigura();
 
     temporizador = setInterval(refrescar, REFRESCO_MS);
     // con la pestaña oculta no se consulta: cero trabajo de fondo

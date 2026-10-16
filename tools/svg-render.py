@@ -45,6 +45,31 @@ def resolve_tokens(svg: str) -> tuple[str, dict[str, str]]:
     return svg, tokens
 
 
+def theme_vars(app_css: Path) -> dict[str, str]:
+    """Saca los --mg-* que la app define para el diagrama.
+
+    Sin esto se previsualiza el SVG con SUS valores por defecto, que no son los
+    que se ven dentro de la app: se acaba ajustando el dibujo contra una
+    referencia que no es la real.
+    """
+    if not app_css or not app_css.is_file():
+        return {}
+    txt = app_css.read_text()
+    # Hay VARIOS bloques .device-frame (uno para el tamano y otro para las
+    # variables). Con buscar solo el primero salian 0 variables.
+    vars_: dict[str, str] = {}
+    for m in re.finditer(r"\.device-frame\s*\{(.*?)\}", txt, re.S):
+        vars_.update(re.findall(r"(--mg-[a-z0-9-]+)\s*:\s*([^;]+);", m.group(1)))
+    return vars_
+
+
+def aplicar_tema(svg: str, vars_: dict[str, str]) -> str:
+    if not vars_:
+        return svg
+    decl = "".join(f"{k}:{v};" for k, v in vars_.items())
+    return svg.replace("</svg>", f"<style>.mouse-diagram{{{decl}}}</style>\n</svg>")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="SVG a PNG resolviendo tokens CSS")
     ap.add_argument("svg")
@@ -54,6 +79,9 @@ def main() -> int:
     ap.add_argument("--zoom", type=float, default=2.0)
     ap.add_argument("--width", type=int, default=None,
                     help="ancho final en px (implica recomponer sobre --bg)")
+    ap.add_argument("--theme", default="rat9/ui/css/app.css",
+                    help="hoja de la app de la que tomar los --mg-* (por defecto "
+                         "se busca sola; 'no' para desactivar)")
     args = ap.parse_args()
 
     src = Path(args.svg)
@@ -61,6 +89,11 @@ def main() -> int:
         sys.exit(f"no existe: {src}")
     svg, tokens = resolve_tokens(src.read_text())
     print(f"tokens resueltos: {len(tokens)}")
+
+    if args.theme and str(args.theme).lower() not in ("no", "none", ""):
+        tema = theme_vars(Path(args.theme))
+        svg = aplicar_tema(svg, tema)
+        print(f"tema de la app aplicado: {len(tema)} variables --mg-*")
 
     with tempfile.NamedTemporaryFile("w", suffix=".svg", delete=False) as fh:
         fh.write(svg)

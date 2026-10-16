@@ -192,6 +192,7 @@ SVG_STYLE = """<style>
     --mg-guide:      #5c7691;
     --mg-badge-bg:   #0b0e14;
     --mg-badge-edge: #93a7c3;
+    --mg-luz:        #ffffff;
   }
   .mouse-diagram .badge text {
     fill: var(--mg-ink); font-family: ui-monospace, monospace;
@@ -231,6 +232,7 @@ FILL_MAP = {
     "#39465a": "var(--mg-ridge)",
     "#2f3a4c": "var(--mg-seam)",
     "#93a7c3": "var(--mg-ink)",
+    "#ffffff": "var(--mg-luz)",
 }
 
 
@@ -317,6 +319,18 @@ def build_svg() -> str:
                 [(CX + 3, y) for y in reversed(ys)]
         return band_shape(outer, inner)
 
+    def filo_placa(side: str) -> str:
+        """Filo iluminado a lo largo del borde exterior de la tapa: es el canto
+        achaflanado cogiendo la luz. Se queda corto hacia atras a proposito, que
+        el brillo se apague solo."""
+        ys = [PLATE_Y0 + 4] + [y for y in ys_right
+                               if PLATE_Y0 + 4 < y < PLATE_Y1 - 24] \
+            + [PLATE_Y1 - 24]
+        off = 4.5 if side == "l" else -4.5
+        pts = ([(flank_inner(y) + 2.5 + off, y) for y in ys] if side == "l"
+               else [(right_edge(y) - 3.5 + off, y) for y in ys])
+        return smooth_path(pts)
+
     # ── panel lateral ────────────────────────────────────────────────────────
     flank_ys = [y for y in ys_right if y >= 96]
     flank = band_shape(
@@ -369,10 +383,8 @@ def build_svg() -> str:
      tabindex="0" role="button" aria-label="Modo {i + 1}">
     <rect class="hit" x="{x1:.1f}" y="{a:.1f}" width="{w:.1f}" height="{h:.1f}"
           rx="6" fill="url(#g-plate)"/>
-    <rect x="{x1 + 4:.1f}" y="{a + 2.5:.1f}" width="{w - 8:.1f}" height="3"
-          rx="1.5" fill="#3d4a5f" opacity=".65"/>
     <text class="lbl" x="{x1 + w / 2:.1f}" y="{a + h / 2 + 4:.1f}"
-          text-anchor="middle" font-size="11">{i + 1}</text>
+          text-anchor="middle" font-size="14">{i + 1}</text>
   </g>''')
     mode_svg = "\n".join(mode_svg)
 
@@ -416,17 +428,45 @@ def build_svg() -> str:
     <stop offset="0%" stop-color="var(--mg-gap)"/>
     <stop offset="100%" stop-color="var(--mg-recess)"/>
   </linearGradient>
+
+  <!-- Banda de luz diagonal: da volumen al cuerpo sin fingir un 3D.
+       Los valores estan SUBIDOS a proposito: la primera version iba al 8% de
+       opacidad y sobre un fondo oscuro no se veia nada. -->
+  <linearGradient id="g-luz" x1="0.12" y1="0" x2="0.88" y2="1">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="36%"  stop-color="#ffffff" stop-opacity=".17"/>
+    <stop offset="52%"  stop-color="#ffffff" stop-opacity=".075"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Filo iluminado: de claro arriba a nada. Es el canto achaflanado de una
+       pieza cogiendo la luz, y es lo que separa "esquema" de "ilustracion". -->
+  <linearGradient id="g-filo" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity=".5"/>
+    <stop offset="24%"  stop-color="#ffffff" stop-opacity=".26"/>
+    <stop offset="70%"  stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Oclusion: oscurece los bordes de una pieza, que es como se lee el volumen -->
+  <radialGradient id="g-oclusion" cx="0.5" cy="0.45" r="0.62">
+    <stop offset="50%"  stop-color="#000000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity=".68"/>
+  </radialGradient>
 </defs>
 
 <!-- casco -->
 <path d="{shell}" fill="url(#g-shell)" stroke="#3a4761" stroke-width="1.6"/>
+<!-- banda de luz: el cuerpo deja de ser una silueta plana -->
+<path d="{shell}" fill="url(#g-luz)"/>
 
-<!-- panel lateral izquierdo: la superficie donde vive el pulgar -->
+<!-- panel lateral izquierdo: la superficie donde vive el pulgar.
+     Sin textura de cepillado: probada, competia con los controles y a este
+     tamano parecia una trama grafica, no un acabado. -->
 <path d="{flank}" fill="url(#g-flank)"/>
 
-<!-- reposamanos -->
+<!-- reposamanos: la oclusion en los bordes es lo que le da forma -->
 <path d="{palm}" fill="#1e2632"/>
-
+<path d="{palm}" fill="url(#g-oclusion)"/>
 <!-- estructura del reposamanos: junta de ajuste y escala grabada -->
 <g stroke="#2b3543" stroke-width="1" fill="none">
   <path d="{palm_seam}"/>
@@ -439,11 +479,15 @@ def build_svg() -> str:
    aria-label="Botón izquierdo">
   <path class="hit" d="{plate('l')}" fill="url(#g-plate)" stroke="#0b0e14"
         stroke-width="2"/>
+  <path d="{filo_placa('l')}" fill="none" stroke="url(#g-filo)"
+        stroke-width="1.8"/>
 </g>
 <g class="z" data-zone="btn-right" data-usage="2" tabindex="0" role="button"
    aria-label="Botón derecho">
   <path class="hit" d="{plate('r')}" fill="url(#g-plate)" stroke="#0b0e14"
         stroke-width="2"/>
+  <path d="{filo_placa('r')}" fill="none" stroke="url(#g-filo)"
+        stroke-width="1.8"/>
 </g>
 
 <!-- costuras funcionales: separacion de botones y de reposamanos -->
@@ -466,6 +510,9 @@ def build_svg() -> str:
   <rect x="{wx0 + 3:.0f}" y="{WHEEL_Y0 + 5:.0f}" width="7"
         height="{WHEEL_Y1 - WHEEL_Y0 - 10:.0f}" rx="3.5" fill="#39465a"
         opacity=".7"/>
+  <!-- reflejo especular arriba: el brillo de una superficie cilindrica -->
+  <ellipse cx="{(wx0 + wx1) / 2:.0f}" cy="{WHEEL_Y0 + 18:.0f}"
+           rx="{WHEEL_X_HALF - 7:.0f}" ry="7" fill="#ffffff" opacity=".32"/>
   <g stroke="#2f3a4c" stroke-width="1.2" opacity=".9">
 {wheel_ridges}
   </g>

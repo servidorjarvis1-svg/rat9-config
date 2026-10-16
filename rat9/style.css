@@ -1,0 +1,178 @@
+/* rat9-config — estilo propio: azul eléctrico sobre fondo oscuro */
+
+:root {
+  --bg: #0e1018;
+  --card: #161926;
+  --card-2: #1c2030;
+  --fg: #e8ecf5;
+  --muted: #7f8aa8;
+  --accent: #4d8dff;
+  --accent-2: #64d2ff;
+  --ok: #3ddc97;
+  --warn: #ffb020;
+  --err: #ff5c5c;
+  --border: #262b3d;
+}
+
+/* la ventana usa la imagen HUD como fondo, con el contenido en paneles */
+window.rat9 {
+  background-color: #0e1018;
+  background-image: url("assets/bg-hud.png");
+  background-size: cover;
+  background-position: center;
+}
+
+/* paneles semitransparentes sobre el fondo */
+.panel {
+  background-color: alpha(#161926, 0.92);
+  border: 1px solid #262b3d;
+  border-radius: 12px;
+  margin: 6px;
+}
+
+.panel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f8aa8;
+  padding: 10px 14px 6px;
+}
+
+label.big-number {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #4d8dff;
+}
+
+.app-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e8ecf5;
+}
+
+.app-title span { color: #4d8dff; }
+
+.status {
+  font-size: 0.82rem;
+  color: #7f8aa8;
+}
+
+.status b { color: #e8ecf5; font-weight: 600; }
+
+/* barra de pestañas */
+.tabbar { padding: 8px 12px 2px; }
+
+.tabbar button {
+  padding: 6px 16px;
+  border-radius: 8px;
+  color: #7f8aa8;
+  font-weight: 600;
+  font-size: 0.86rem;
+  border: 1px solid transparent;
+}
+
+.tabbar button:hover { color: #e8ecf5; background-color: #1c2030; }
+
+.tabbar button:checked {
+  color: #ffffff;
+  background-color: #22304d;
+  border-color: #4d8dff;
+  box-shadow: inset 0 0 0 1px #4d8dff;
+}
+
+/* listas */
+listbox.boxed-list {
+  background-color: #12151f;
+  border: 1px solid #262b3d;
+  border-radius: 8px;
+}
+
+listbox.boxed-list row {
+  padding: 7px 10px;
+  border-radius: 6px;
+}
+
+listbox.boxed-list row:hover { background-color: #1c2030; }
+
+listbox.boxed-list row.selected {
+  background-color: #22304d;
+  box-shadow: inset 3px 0 0 #4d8dff;
+}
+
+/* botones */
+button {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 7px 14px;
+}
+
+button.suggested-action {
+  background-image: linear-gradient(#4d8dff, #3a72e0);
+  color: #ffffff;
+}
+
+button.suggested-action:hover {
+  background-image: linear-gradient(#5f9aff, #4478e8);
+}
+
+button.destructive-action {
+  background-color: #2a1620;
+  color: #ff7a7a;
+  border: 1px solid #47222e;
+}
+
+button.destructive-action:hover { background-color: #3a1c28; }
+
+button.flat {
+  background-color: transparent;
+  border: 1px solid #262b3d;
+  color: #7f8aa8;
+}
+
+button.flat:hover { color: #e8ecf5; background-color: #1c2030; }
+
+/* desplegables y campos */
+dropdown, spinbutton, entry {
+  background-color: #12151f;
+  border: 1px solid #262b3d;
+  border-radius: 8px;
+  color: #e8ecf5;
+  padding: 5px 9px;
+}
+
+dropdown:hover, spinbutton:hover { border-color: #3a4358; }
+
+label.heading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f8aa8;
+}
+
+label.dim-label { color: #6c7794; font-size: 0.82rem; }
+
+label.caption { color: #a8b2c8; font-size: 0.85rem; }
+
+label.accent { color: #4d8dff; font-weight: 700; }
+
+/* battery bar */
+levelbar trough { min-height: 12px; border-radius: 6px; }
+levelbar highlight {
+  border-radius: 6px;
+  background-image: linear-gradient(#64d2ff, #4d8dff);
+}
+
+/* separador */
+separator { background-color: #262b3d; }
+
+/* scrollbars discretas */
+scrollbar { background-color: transparent; }
+scrollbar slider {
+  background-color: #2e3550;
+  border-radius: 4px;
+  min-width: 8px;
+  min-height: 28px;
+}
+scrollbar slider:hover { background-color: #4d8dff; }

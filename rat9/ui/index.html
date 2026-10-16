@@ -93,6 +93,20 @@
         <p class="hint" id="deviceMsg">cargando diagrama…</p>
       </div>
 
+      <!-- Retrato realista del dispositivo. Va APARTE del esquema y sin marcas
+           encima: el render es una ilustracion generada, no una foto de esta
+           unidad, y sus piezas no caen donde las del raton real. Poner las
+           llamadas encima seria senalar la pieza equivocada. -->
+      <figure class="device-figure hidden" id="deviceFigure">
+        <img src="assets/raton-render.png" width="720" height="931"
+             alt="Ilustración realista del Mad Catz R.A.T.9 visto desde arriba">
+        <figcaption>
+          Ilustración del dispositivo, generada. No es una foto de tu unidad ni
+          sus piezas están a escala: para programar botones usa el
+          <b>esquema</b>, que sí lleva la geometría real.
+        </figcaption>
+      </figure>
+
       <!-- la lectura del raton, en el sitio del display de LEDs del original -->
       <div class="bench__readout">
         <span class="hud">DPI del perfil activo</span>
@@ -100,6 +114,15 @@
           <div class="dpiled" id="stageLed" role="img" aria-label="lectura de DPI"></div>
           <span class="bench__unit">dpi</span>
         </div>
+      </div>
+
+      <div class="bench__toggle" role="group" aria-label="Vista del dispositivo">
+        <button class="btn btn--quiet" data-figura="esquema" aria-pressed="true">
+          Esquema
+        </button>
+        <button class="btn btn--quiet" data-figura="render" aria-pressed="false">
+          Ilustración
+        </button>
       </div>
 
       <!-- cajetín del plano: solo hechos, nada inventado -->

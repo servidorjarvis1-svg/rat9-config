@@ -304,6 +304,46 @@ body {
   display: grid; place-items: center;
 }
 
+/* Retrato realista del dispositivo, conmutador aparte del esquema. */
+.device-figure {
+  margin: 0; inline-size: 100%;
+  display: grid; justify-items: center; gap: var(--sp-3);
+}
+.device-figure img {
+  inline-size: 100%; block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: 60vh;         /* el mismo tope que el esquema: el banco no salta */
+  object-fit: contain;
+  /* La imagen trae su propio fondo oscuro: se funde con el lienzo con una
+     mascara radial para que no se vea el borde del rectangulo.
+     El recorte deja aire a proposito (el raton ocupa del 19% al 81% en anchura
+     y del 14% al 86% en altura): asi la mascara se come SOLO el margen. Con el
+     recorte al ras, cualquier desvanecido se comia el talon del raton.
+     OJO: aqui NO va drop-shadow. Sobre una <img> la sombra sigue el RECTANGULO
+     del elemento, no la silueta del raton, y se ve un halo cuadrado. La
+     profundidad la da el propio sombreado del render. */
+  -webkit-mask-image: radial-gradient(58% 60% at 50% 50%, #000 76%, transparent 100%);
+  mask-image: radial-gradient(58% 60% at 50% 50%, #000 76%, transparent 100%);
+}
+.device-figure figcaption {
+  max-inline-size: 48ch; text-align: center;
+  margin-block-start: var(--sp-2);
+  font: 400 var(--step--1)/1.5 var(--font-ui);
+  color: var(--text-hint);
+}
+.device-figure figcaption b { color: var(--text-mute); font-weight: 600; }
+
+.bench__toggle {
+  display: flex; gap: 1px; background: var(--hairline);
+  border: 1px solid var(--hairline); border-radius: var(--r-tech);
+  overflow: hidden; justify-self: center;
+}
+.bench__toggle .btn { border: 0; border-radius: 0; min-block-size: 30px; }
+.bench__toggle .btn[aria-pressed="true"] {
+  background: var(--bg-3); color: var(--text-hi);
+  box-shadow: inset 0 -2px 0 var(--accent-500);
+}
+
 /* ═══ panel de ajustes ════════════════════════════════════════════════════ */
 
 .panel {
@@ -564,26 +604,29 @@ body {
    paleta que el resto y se puede recalibrar desde aquí. */
 
 .device-frame {
-  /* El fallo de la primera pasada fue este: el raton estaba a la MISMA
-     luminancia que el lienzo, asi que se confundia con el fondo. Ahora el
-     cuerpo sube un escalon claro y, sobre todo, el contorno es una linea
-     visible de verdad: en un dibujo tecnico manda la LINEA, no el relleno. */
-  --mg-shell:      color-mix(in oklab, var(--bg-3), white 6%);
-  --mg-shell-hi:   color-mix(in oklab, var(--bg-3), white 14%);
-  --mg-plate:      color-mix(in oklab, var(--bg-3), white 11%);
-  --mg-plate-hi:   color-mix(in oklab, var(--bg-3), white 24%);
-  --mg-palm:       color-mix(in oklab, var(--bg-3), white 2%);
-  --mg-recess:     var(--bg-sunken);
-  --mg-control:    color-mix(in oklab, var(--bg-3), white 10%);
-  --mg-control-hi: color-mix(in oklab, var(--bg-3), white 26%);
-  --mg-edge:       color-mix(in oklab, var(--text-hint), var(--accent-500) 35%);
-  --mg-seam:       color-mix(in oklab, var(--hairline-strong), white 26%);
-  --mg-ridge:      color-mix(in oklab, var(--hairline-strong), white 34%);
-  --mg-gap:        var(--gap-line);
-  --mg-ink:        var(--text-body);
-  --mg-guide:      color-mix(in oklab, var(--hairline-strong), var(--accent-500) 22%);
-  --mg-badge-bg:   var(--bg-sunken);
-  --mg-badge-edge: color-mix(in oklab, var(--text-hint), var(--accent-500) 22%);
+  /* El dibujo tiene su PROPIA escala de valores, y es mas clara que el cromo de
+     la interfaz. Antes derivaba todo de --bg-3 (L 0,26) con unos puntos de
+     blanco: un rango tonal de L 0,21 a 0,30, donde no cabe ningun volumen. Un
+     objeto iluminado necesita sombra Y luz: aqui va de 0,10 (ranuras) a 0,53
+     (caras iluminadas).
+     Es el cambio que de verdad hace que se lea como objeto y no como silueta. */
+  --mg-recess:     oklch(0.100 0.012 255);   /* ranuras, huecos */
+  --mg-gap:        oklch(0.062 0.010 258);   /* junta entre piezas */
+  --mg-shell:      oklch(0.300 0.022 252);   /* cuerpo */
+  --mg-shell-hi:   oklch(0.470 0.028 250);   /* cuerpo iluminado arriba */
+  --mg-palm:       oklch(0.275 0.020 252);   /* reposamanos, un paso atras */
+  --mg-plate:      oklch(0.350 0.024 252);   /* tapas de los botones */
+  --mg-plate-hi:   oklch(0.530 0.030 250);   /* tapas iluminadas */
+  --mg-control:    oklch(0.270 0.020 252);   /* teclas laterales */
+  --mg-control-hi: oklch(0.450 0.026 250);
+  --mg-seam:       oklch(0.235 0.016 252);   /* costuras */
+  --mg-ridge:      oklch(0.500 0.026 250);   /* estrias de la rueda */
+  --mg-edge:       oklch(0.660 0.040 245);   /* contorno: manda la linea */
+  --mg-ink:        oklch(0.800 0.020 250);
+  --mg-guide:      oklch(0.520 0.070 245);
+  --mg-badge-bg:   oklch(0.100 0.012 255);
+  --mg-badge-edge: oklch(0.620 0.055 245);
+  --mg-luz:        oklch(1 0 0);
 }
 
 /* El SVG se mide contra el ancho del contenedor, que ya viene acotado por el
