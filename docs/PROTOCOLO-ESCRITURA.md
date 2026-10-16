@@ -167,16 +167,59 @@ mensaje del driver son 5 bytes: encaja en ese mismo report. O sea que las dos pi
 —el canal de transporte (verificado en hardware) y el contenido (confirmado en el
 driver)— son compatibles.
 
-## 7. Lo que queda exactamente
+## 7. El perfil NO se envía como bloque — y eso cambia el plan
 
-1. **Los valores de `cmd`** y el significado de `w1`/`w2` en cada operación. Se sacan
-   siguiendo las ramas del dispatcher que construyen el mismo búfer de 5 bytes
-   (el camino de `Module_Programming` para el perfil).
-2. **Cómo van montados los 5 bytes dentro del feature report**: si el report es de 8,
-   16 o 64 bytes, y si hay prefijo. El `Capabilities.FeatureReportByteLength` del
-   aparato lo dice, y se puede leer sin escribir nada.
-3. Una vez con eso: **probar con el ratón**, empezando por algo visible y reversible.
+Siguiendo el camino completo dentro del driver se llega a una conclusión que explica
+por qué no aparecía por ningún lado un "envío del perfil":
 
-**Nada de esto se ha probado todavía contra el hardware.** Todo lo de esta sección es
-análisis estático: código desensamblado, sin tocar el aparato.
+- **`SetProfile`** (`0x1f0ee` → `0x1fc34`): comprueba el búfer, lee el slot y la
+  máscara, y **parsea el XML**. Guarda el resultado. **No envía nada.**
+- **`Activate`** (`0x1f042` → `0x1fea4` → `0x20038`): cambia una bandera del objeto
+  (`0xa0`/`0xa1`/`0xa2`) y llama a una rutina de **contadores de referencias**. Tampoco
+  envía nada al aparato.
+
+Y el motivo se ve en los nombres de los módulos del driver: `Module_DPI_EE` (el DPI en
+EEPROM), `Module_ReportModifier` (los bloques de macro), `Module_Programming`. **El
+driver interpreta el perfil y programa el aparato ajuste a ajuste**: cada nivel de DPI,
+cada mapeo de botón, cada macro, por separado. El perfil de 5 KB es una estructura del
+host; al aparato solo le llegan los ajustes ya digeridos.
+
+**Consecuencia práctica, y es buena**: para escribir desde Linux no hay que enviar
+ningún perfil troceado. Hay que enviar **los ajustes sueltos**, que son comandos
+pequeños — uno por feature report. Eso está al alcance, y encaja con el enum de
+`FeatureId` que ya estaba sacado del .NET (`MouseDpiByte=3`, `MouseDpiUShort=14`,
+`ProfileSelect=13`, `ButtonMapping=5`…).
+
+## 8. El emisor y sus argumentos
+
+El envío al aparato pasa por `0x201d8`: empaqueta una petición con **cuatro valores**
+(offsets `0x8`, `0xc`, `0x10`, `0x14` del objeto) y la encola en WDF. Tiene cuatro
+sitios que lo llaman, y tres de ellos pasan la **misma terna**:
+
+```asm
+mov  $0x2,%edx            ; arg2 = 2
+mov  $0x300031,%r8d       ; arg3 = 0x300031
+lea  -0x1(%rdx),%r9d      ; arg4 = 1
+...  value en la pila      ; arg5 = el valor
+call 0x201d8
+```
+
+`0x30` y `0x31` son **48 y 49**, que son exactamente los códigos de precisión X e Y
+que ya estaban identificados en el .NET (`PrecisionX` usa el byte 48, `PrecisionY` el
+49). O sea que el análisis estático y el descompilado **coinciden en el mismo número**,
+que es la mejor señal de que la lectura es correcta.
+
+## 9. Lo que queda exactamente
+
+1. **Los comandos de ajuste sueltos**: el DPI (por nivel), el mapeo de botones, la
+   selección de perfil y la luminosidad. Cada uno es un comando pequeño.
+2. **Cómo van montados en el feature report**: el `Capabilities.FeatureReportByteLength`
+   del aparato lo dice y se lee sin escribir nada.
+3. Entonces sí: **probar contra el ratón**, empezando por algo visible y reversible
+   (la luminosidad o un nivel de DPI), y **nunca** la orden de guardar en EEPROM hasta
+   tener todo verificado.
+
+**Nada de esto se ha probado contra el hardware.** Todo es análisis estático: código
+desensamblado, sin tocar el aparato.
+
 
