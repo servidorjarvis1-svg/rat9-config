@@ -330,14 +330,29 @@ body {
    queda solo con el horizontal, que es el que gira: sin eso, en táctil el
    arrastre hace scroll y no gira. */
 .giro {
-  display: grid; place-items: center;
-  inline-size: 100%; max-inline-size: 100%;
+  /* Layout de BLOQUE, igual que .device-stack (que es el que SI funciona en la
+     vista Producto). Antes era un grid con place-items:center y la imagen se
+     encogía a un tamaño diminuto: con el elemento centrado, su inline-size:100%
+     se resuelve contra un ancho ajustado al contenido y el conjunto colapsa. */
+  position: relative;
+  inline-size: 100%;
+  min-block-size: 8rem;
+  line-height: 0;
   cursor: grab; touch-action: pan-y;
   user-select: none; -webkit-user-select: none;
   outline-offset: 6px;
+  /* Charco de luz DEBAJO del ratón. No es decoración: los fotogramas son un ratón
+     oscuro (y ahora sin fondo, así que sobre el fondo oscuro de la app no habría
+     nada que lo separara). La misma solución que el banco del esquema: primero la
+     superficie iluminada, luego el objeto encima. */
+  background: radial-gradient(56% 46% at 50% 46%,
+    oklch(0.42 0.028 258 / .95) 0%, oklch(0.30 0.022 258 / .5) 48%,
+    transparent 78%);
+  border-radius: var(--r-tech);
 }
 .giro:active { cursor: grabbing; }
 .giro img {
+  display: block;
   inline-size: 100%; block-size: auto;
   max-inline-size: 100%; max-block-size: 50vh;
   object-fit: contain;

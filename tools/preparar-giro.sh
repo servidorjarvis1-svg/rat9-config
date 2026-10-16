@@ -24,6 +24,7 @@ PATRON="275x349"
 ZOOM=3
 MODELOS=/usr/share/upscayl/models
 MODELO=remacri-4x
+MASCARAS="${RAIZ}/3d/masks"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -56,10 +57,26 @@ for f in "${FRAMES[@]}"; do
   # upscayl-ncnn: si no se le pasa -m, busca los modelos en /usr/share/upscayl/bin/models
   # (que no existe) y DEVUELVE UNA IMAGEN NEGRA SIN DAR ERROR. Por eso el -m va fijo.
   /usr/bin/upscayl-ncnn -i "$f" -o "$crudo" -n "$MODELO" -z "$ZOOM" -m "$MODELOS" >/dev/null 2>&1
-  # Se queda en 550 px de ancho: el render de al lado mide 700 y no hace falta mas.
-  # En WebP pesa ~10 veces menos que en PNG, y son 24 fotogramas que se cargan
-  # todos: en PNG eran 30 MB y en WebP son 1,5.
-  /usr/bin/magick "$crudo" -resize 550x -quality 88 "$(printf "%s/%02d.webp" "$DESTINO" "$i")"
+  # SE LE QUITA EL FONDO con la mascara que ya calculo el 3D (mismo encuadre). Los
+  # fotogramas originales son un raton oscuro sobre fondo oscuro, y ese fondo viene
+  # OPACO: sobre el fondo oscuro de la app, el visor entero se leia como un hueco
+  # vacio — que es exactamente lo que parecia cuando "el giro no se veia". Sin fondo,
+  # el raton flota sobre la superficie de la app y se lee.
+  # Se queda en 550 px de ancho y en WebP: son 24 fotogramas que se cargan todos, y
+  # en PNG eran 30 MB contra 0,7 en WebP.
+  /usr/bin/python3 - "$crudo" "$DESTINO" "$i" "$MASCARAS" <<'PY'
+import sys
+from pathlib import Path
+import numpy as np
+from PIL import Image
+crudo, destino, i, mdir = sys.argv[1], Path(sys.argv[2]), int(sys.argv[3]), Path(sys.argv[4])
+im = Image.open(crudo).convert("RGBA")
+m = np.load(mdir / f"mask_s1_{i - 1:02d}.npy")
+alfa = Image.fromarray((m * 255).astype(np.uint8)).resize(im.size, Image.LANCZOS)
+im.putalpha(alfa)
+alto = round(550 * im.height / im.width)
+im.resize((550, alto), Image.LANCZOS).save(destino / f"{i:02d}.webp", quality=88)
+PY
   rm -f "$crudo"
   printf "  %02d/24\n" "$i"
 done

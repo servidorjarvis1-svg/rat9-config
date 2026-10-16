@@ -163,6 +163,26 @@ class Rat9App(Gtk.Application):
     def on_load_changed(self, wv, event):
         if event in (WebKit.LoadEvent.STARTED, WebKit.LoadEvent.FINISHED):
             print('load: %s %s' % (event.value_name, wv.get_uri()))
+        if event == WebKit.LoadEvent.FINISHED and self.opts.dev:
+            # Medición REAL del layout, en modo --dev. Sin esto hay que adivinar por
+            # qué una figura sale diminuta o no aparece, y adivinar cuesta horas:
+            # un modelo de visión no mide, y el navegador no se queja de un tamaño
+            # pequeño, solo lo pinta pequeño.
+            self.wv.evaluate_javascript(
+                "(() => { const r = (e) => e ? (Math.round(e.getBoundingClientRect().width)"
+                " + 'x' + Math.round(e.getBoundingClientRect().height)) : 'no existe';"
+                " return 'MEDIDAS bench=' + r(document.querySelector('.bench'))"
+                " + ' deviceGiro=' + r(document.querySelector('#deviceGiro'))"
+                " + ' giroCaja=' + r(document.querySelector('#giroCaja'))"
+                " + ' giroImg=' + r(document.querySelector('#giroImg'))"
+                " + ' oculto=' + (document.querySelector('#deviceGiro') || {}).className; })()",
+                -1, None, None, None, None, self._medidas_hechas)
+
+    def _medidas_hechas(self, wv, res, _u=None):
+        try:
+            print('MEDIDAS: %s' % wv.evaluate_javascript_finish(res))
+        except Exception as e:            # noqa: BLE001
+            print('MEDIDAS: no he podido medir (%s)' % e)
 
     def on_load_failed(self, wv, event, uri, error):
         print('load FAILED: %s (%s)' % (uri, error), file=sys.stderr)

@@ -81,13 +81,20 @@ const App = (() => {
   }
 
   async function comprobarGiro() {
-    // ¿Están los fotogramas del giro? Si no, el botón no se ofrece: un botón que
-    // lleva a una imagen rota es peor que no tener el botón.
-    if (!$('#giroImg')) return;
-    try {
-      const r = await fetch('assets/giro/01.webp', { method: 'HEAD' });
-      giroListo = r.ok;
-    } catch { giroListo = false; }
+    // ¿Están los fotogramas del giro? Se comprueba CARGANDO LA IMAGEN DE VERDAD y
+    // escuchando su onload/onerror.
+    //
+    // NO se usa fetch(..., {method:'HEAD'}): el servidor de esta app solo implementa
+    // do_GET y responde 501 a HEAD, así que la comprobación fallaba SIEMPRE aunque
+    // los fotogramas estuvieran, el botón se ocultaba y el visor se quedaba vacío sin
+    // decir nada. Ese fue el motivo real de que "el giro no se viera".
+    const img = $('#giroImg');
+    if (!img) return;
+    giroListo = await new Promise((listo) => {
+      img.onload = () => listo(true);
+      img.onerror = () => listo(false);
+      img.src = 'assets/giro/01.webp';
+    });
     if (giroListo) {
       giroPinta();
     } else {
@@ -299,6 +306,30 @@ const App = (() => {
     // concreta sin tener que pulsar el boton (y para poder comprobarla).
     figura = vista0 || (vista === 'panel' ? 'original' : 'esquema');
     pintarFigura();
+
+    // Diagnostico: con ?medir=1 la pagina escribe los TAMANOS REALES de los
+    // elementos en un aviso visible. Existe porque un modelo de vision no mide (se
+    // contradice) y el navegador no avisa de un tamano pequeño: lo pinta pequeño y
+    // calla. Asi se comprueba en un segundo si una figura sale diminuta o no aparece.
+    if (new URLSearchParams(location.search).has('medir')) {
+      const mide = (sel) => {
+        const e = document.querySelector(sel);
+        if (!e) return sel + '=no existe';
+        const r = e.getBoundingClientRect();
+        return sel + '=' + Math.round(r.width) + 'x' + Math.round(r.height);
+      };
+      const p = document.createElement('p');
+      p.className = 'hint';
+      p.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;'
+        + 'background:#000;padding:6px;font-size:12px;max-width:70ch';
+      p.textContent = (['#deviceGiro', '#giroCaja', '#giroImg', '.bench',
+        '.device-figure', 'main', 'body'].map(mide).join('   '))
+        + '   || natural: ' + (() => {
+          const i = document.querySelector('#giroImg');
+          return i ? (i.naturalWidth + 'x' + i.naturalHeight + ' src=' + i.currentSrc.split('/').pop()) : 'no';
+        })();
+      document.body.appendChild(p);
+    }
 
     temporizador = setInterval(refrescar, REFRESCO_MS);
     // con la pestaña oculta no se consulta: cero trabajo de fondo
