@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
 
@@ -107,6 +108,25 @@ SIL_X0, SIL_Y0, SIL_W, SIL_H = 44.0, 60.0, 362.0, 640.0
 _CONTORNO: dict | None = None
 _EJE = 280.0            # eje del cuerpo (CX); con contorno medido se recalcula
 
+# ─── interior MEDIDO (opcional) ──────────────────────────────────────────────
+# tools/trazar-interior.py mide las costuras de los botones, la rueda y su
+# ranura y el borde del panel lateral sobre la misma imagen, en las mismas
+# unidades normalizadas que el contorno. Si existe rat9/ui/interior.json, esas
+# medidas mandan sobre las constantes PLATE_*/WHEEL_*/FLANK_W de aqui arriba; si
+# no existe, nada de esto se usa y el generador sigue como siempre (via de
+# vuelta atras garantizada).
+_INTERIOR: dict | None = None
+
+
+def _map_x(u: float) -> float:
+    """u normalizado (0..1 de la caja del raton en la imagen) -> x del esquema."""
+    return SIL_X0 + u * SIL_W
+
+
+def _map_y(v: float) -> float:
+    """v normalizado (0 = morro, 1 = talon) -> y del esquema."""
+    return SIL_Y0 + v * SIL_H
+
 
 def _eje_medido(cont: dict) -> float:
     """Eje del cuerpo medido en la parte DELANTERA, donde aun no hay aleta.
@@ -160,6 +180,11 @@ def right_edge(y: float) -> float:
 
 def flank_inner(y: float) -> float:
     """Borde interior del panel lateral."""
+    if _INTERIOR is not None and _INTERIOR.get("panel_lateral_izq"):
+        # borde MEDIDO fila a fila sobre la imagen (trazar-interior.py): manda
+        # sobre la aproximacion de fraccion fija, igual que manda el contorno
+        # medido sobre el perfil
+        return SIL_X0 + _interp(_INTERIOR["panel_lateral_izq"], _v(y)) * SIL_W
     if _CONTORNO is not None:
         # una fraccion del ancho local: asi el panel sigue la forma medida en
         # vez de arrastrar las anchuras fijas del perfil inventado
@@ -221,6 +246,39 @@ def band_shape(outer, inner) -> str:
 
 def sample(a: float, b: float, n: int) -> list[float]:
     return [a + (b - a) * i / (n - 1) for i in range(n)]
+
+
+def arco_flecha(cx: float, cy: float, r: float, sentido: int = 1,
+                a0: float = -150.0, a1: float = 130.0) -> tuple[str, str]:
+    """Arco con punta de flecha: el simbolo de "esto gira".
+
+    Por que existe: una rueda no se senala con un punto de boton. Un boton se
+    pulsa, y una rueda GIRA en dos sentidos, asi que su marca tiene que decir
+    eso. Un circulo con punta lo dice de un vistazo; un punto no dice nada.
+
+    `sentido` = 1 gira en un sentido, -1 en el contrario (se dibuja el arco al
+    reves y la punta mira al otro lado).
+    """
+    if sentido < 0:
+        a0, a1 = a1, a0
+    pasos = 18
+    pts = [(cx + r * math.cos(math.radians(a0 + (a1 - a0) * i / pasos)),
+            cy + r * math.sin(math.radians(a0 + (a1 - a0) * i / pasos)))
+           for i in range(pasos + 1)]
+    d = "M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+    ax, ay = pts[-1]
+    px, py = pts[-2]
+    tx, ty = ax - px, ay - py
+    n = math.hypot(tx, ty) or 1.0
+    tx, ty = tx / n, ty / n
+    nx, ny = -ty, tx
+    p = 6.0
+    punta = (f"M {ax + tx * p:.1f} {ay + ty * p:.1f} "
+             f"L {ax - nx * p * .62 - tx * p * .34:.1f} "
+             f"{ay - ny * p * .62 - ty * p * .34:.1f} "
+             f"L {ax + nx * p * .62 - tx * p * .34:.1f} "
+             f"{ay + ny * p * .62 - ty * p * .34:.1f} Z")
+    return d, punta
 
 
 def rect_on_flank(y0, y1, inset=6.0) -> str:
@@ -497,13 +555,25 @@ def build_svg() -> str:
         [(flank_inner(y), y) for y in reversed(palm_ys)])
 
     # ── botones principales ──────────────────────────────────────────────────
+    # el borde interior de cada tapa: con interior medido son las DOS lineas de
+    # la ranura central medidas en la imagen (x 370 y x 461); la tapa derecha
+    # NO empieza junto al eje, empieza en su propia linea, y el tramo entre
+    # ambas (el lomo central con la rueda) queda entre las dos ranuras
+    _u_der = (_INTERIOR.get("costura_central", {}).get("u_der")
+              if _INTERIOR is not None else None)
+
     def plate(side: str) -> str:
         ys = [PLATE_Y0] + [y for y in ys_right if PLATE_Y0 < y < PLATE_Y1] \
             + [PLATE_Y1]
         outer = ([(flank_inner(y) + 2.5, y) for y in ys] if side == "l"
                  else [(right_edge(y) - 3.5, y) for y in ys])
-        inner = [(eje - 3, y) for y in reversed(ys)] if side == "l" else \
-                [(eje + 3, y) for y in reversed(ys)]
+        if side == "l":
+            interior_x = eje - 3
+        elif _u_der is not None:
+            interior_x = _map_x(_u_der) + 3
+        else:
+            interior_x = eje + 3
+        inner = [(interior_x, y) for y in reversed(ys)]
         return band_shape(outer, inner)
 
     def filo_placa(side: str) -> str:
@@ -519,22 +589,69 @@ def build_svg() -> str:
         return smooth_path(pts)
 
     # ── panel lateral ────────────────────────────────────────────────────────
-    flank_ys = [y for y in ys_right if y >= 96]
+    # el panel EMPIEZA donde lo mide la imagen: en el render el alojamiento del
+    # pulgar no baja hasta el morro, y dibujarlo desde y=96 pintaba carcasa
+    _flanco_y0 = 96.0
+    if _INTERIOR is not None and _INTERIOR.get("panel_lateral_izq"):
+        _flanco_y0 = _map_y(_INTERIOR["panel_lateral_izq"][0][0])
+    flank_ys = [y for y in ys_right if y >= _flanco_y0]
     flank = band_shape(
         [(left_edge(y), y) for y in flank_ys],
         [(flank_inner(y), y) for y in reversed(flank_ys)])
 
     # ── rueda central ────────────────────────────────────────────────────────
-    wx0, wx1 = eje - WHEEL_X_HALF, eje + WHEEL_X_HALF
-    channel = (f"M {wx0 - 8:.0f} {WHEEL_Y0 - 10:.0f} L {wx1 + 8:.0f} "
-               f"{WHEEL_Y0 - 10:.0f} Q {wx1 + 12:.0f} {WHEEL_Y0 - 10:.0f} "
-               f"{wx1 + 12:.0f} {WHEEL_Y0 - 4:.0f} L {wx1 + 12:.0f} "
-               f"{WHEEL_Y1 + 6:.0f} Q {wx1 + 12:.0f} {WHEEL_Y1 + 12:.0f} "
-               f"{wx1 + 8:.0f} {WHEEL_Y1 + 12:.0f} L {wx0 - 8:.0f} "
-               f"{WHEEL_Y1 + 12:.0f} Q {wx0 - 12:.0f} {WHEEL_Y1 + 12:.0f} "
-               f"{wx0 - 12:.0f} {WHEEL_Y1 + 6:.0f} L {wx0 - 12:.0f} "
-               f"{WHEEL_Y0 - 4:.0f} Q {wx0 - 12:.0f} {WHEEL_Y0 - 10:.0f} "
-               f"{wx0 - 8:.0f} {WHEEL_Y0 - 10:.0f} Z")
+    # Con interior medido, la rueda va DONDE ESTA en la imagen: no esta centrada
+    # en el eje del cuerpo (el render es oblicuo y el alojamiento cae a la
+    # derecha del eje), asi que tomar eje-WHEEL_X_HALF/2 la desplazaba.
+    if _INTERIOR is not None and "rueda" in _INTERIOR:
+        _r = _INTERIOR["rueda"]
+        wx0, wx1 = _map_x(_r["x0_u"]), _map_x(_r["x1_u"])
+        # WHEEL_Y0/WHEEL_Y1 ya los recoloco main() con las filas medidas
+    else:
+        _r = None
+        wx0, wx1 = eje - WHEEL_X_HALF, eje + WHEEL_X_HALF
+    _ran = _INTERIOR.get("ranura") if _INTERIOR is not None else None
+    if _ran is not None and _r is not None:
+        # ranura medida: la fosa oscura completa tal cual, esquinas redondeadas
+        cx0, cx1 = _map_x(_ran["x0_u"]), _map_x(_ran["x1_u"])
+        ctop, cbot = _map_y(_r["y0_v"]), _map_y(_ran["y1_v"])
+        channel = (f"M {cx0:.1f} {ctop + 8:.1f} "
+                   f"Q {cx0:.1f} {ctop:.1f} {cx0 + 8:.1f} {ctop:.1f} "
+                   f"L {cx1 - 8:.1f} {ctop:.1f} "
+                   f"Q {cx1:.1f} {ctop:.1f} {cx1:.1f} {ctop + 8:.1f} "
+                   f"L {cx1:.1f} {cbot - 8:.1f} "
+                   f"Q {cx1:.1f} {cbot:.1f} {cx1 - 8:.1f} {cbot:.1f} "
+                   f"L {cx0 + 8:.1f} {cbot:.1f} "
+                   f"Q {cx0:.1f} {cbot:.1f} {cx0:.1f} {cbot - 8:.1f} Z")
+        if "lip_x0_u" in _ran:
+            # el labio es la ULNICA pieza clara de la zona: una banda medida
+            # sobre el brillo real, donde antes no habia nada
+            lx0, lx1 = _map_x(_ran["lip_x0_u"]), _map_x(_ran["lip_x1_u"])
+            ly0 = _map_y(_ran["lip_y0_v"])
+            lip_banda = (f'  <rect x="{lx0:.1f}" y="{ly0:.1f}" '
+                         f'width="{lx1 - lx0:.1f}" height="{ctop - ly0:.1f}" '
+                         f'rx="7" fill="var(--mg-ridge)"/>\n')
+            channel_lip = (f"M {lx0 - 4:.1f} {ly0 + 3:.1f} "
+                           f"Q {eje:.1f} {ly0 - 5:.1f} {lx1 + 4:.1f} {ly0 + 3:.1f}")
+        else:
+            lip_banda = ""
+            channel_lip = (f"M {cx0 - 8:.1f} {ctop - 4:.1f} "
+                           f"Q {eje:.1f} {ctop - 10:.1f} {cx1 + 8:.1f} {ctop - 4:.1f}")
+    else:
+        # constantes de siempre: ranura = rueda inflada 10-12 px
+        channel = (f"M {wx0 - 8:.0f} {WHEEL_Y0 - 10:.0f} L {wx1 + 8:.0f} "
+                   f"{WHEEL_Y0 - 10:.0f} Q {wx1 + 12:.0f} {WHEEL_Y0 - 10:.0f} "
+                   f"{wx1 + 12:.0f} {WHEEL_Y0 - 4:.0f} L {wx1 + 12:.0f} "
+                   f"{WHEEL_Y1 + 6:.0f} Q {wx1 + 12:.0f} {WHEEL_Y1 + 12:.0f} "
+                   f"{wx1 + 8:.0f} {WHEEL_Y1 + 12:.0f} L {wx0 - 8:.0f} "
+                   f"{WHEEL_Y1 + 12:.0f} Q {wx0 - 12:.0f} {WHEEL_Y1 + 12:.0f} "
+                   f"{wx0 - 12:.0f} {WHEEL_Y0 + 6:.0f} L {wx0 - 12:.0f} "
+                   f"{WHEEL_Y0 - 4:.0f} Q {wx0 - 12:.0f} {WHEEL_Y0 - 10:.0f} "
+                   f"{wx0 - 8:.0f} {WHEEL_Y0 - 10:.0f} Z")
+        lip_banda = ""
+        channel_lip = (f"M {wx0 - 15:.0f} {WHEEL_Y0 - 8:.0f} "
+                       f"Q {eje:.0f} {WHEEL_Y0 - 17:.0f} {wx1 + 15:.0f} "
+                       f"{WHEEL_Y0 - 8:.0f}")
 
     # ── controles laterales ──────────────────────────────────────────────────
     side_svg = "\n".join(
@@ -545,18 +662,58 @@ def build_svg() -> str:
   </g>''' for zid, label, usage, y0, y1 in SIDE_CONTROLS)
 
     # ── rueda del pulgar (dos mitades, un sentido cada una) ──────────────────
+    # Se dibuja como lo que es: un CILINDRO visto desde arriba, o sea una CAPSULA
+    # con degradado transversal, reflejo y estrías. Antes era una banda que
+    # seguia el contorno del panel, que es un rectangulo; y un rectangulo con
+    # rayas lee como boton con rejilla, no como rueda.
     _zid, u_cw, u_ccw, ty0, ty1 = THUMB_WHEEL
     mid = (ty0 + ty1) / 2
-    tw = rect_on_flank(ty0, ty1, inset=9)
-    tw_top = rect_on_flank(ty0, mid, inset=9)
-    tw_bot = rect_on_flank(mid, ty1, inset=9)
+    pw_cx = (left_edge(mid) + flank_inner(mid)) / 2
+    pw_cy = mid
+    pw_rx = max(13.0, (flank_inner(mid) - left_edge(mid)) / 2 - 4)
+    pw_ry = (ty1 - ty0) / 2
+
+    def media_elipse(arriba: bool) -> str:
+        barrido = 1 if arriba else 0
+        return (f"M {pw_cx - pw_rx:.1f} {pw_cy:.1f} "
+                f"A {pw_rx:.1f} {pw_ry:.1f} 0 0 {barrido} "
+                f"{pw_cx + pw_rx:.1f} {pw_cy:.1f} Z")
+
+    tw_top, tw_bot = media_elipse(True), media_elipse(False)
+    tw = (f"M {pw_cx - pw_rx:.1f} {pw_cy:.1f} "
+          f"A {pw_rx:.1f} {pw_ry:.1f} 0 0 1 {pw_cx + pw_rx:.1f} {pw_cy:.1f} "
+          f"A {pw_rx:.1f} {pw_ry:.1f} 0 0 1 {pw_cx - pw_rx:.1f} {pw_cy:.1f} Z")
     ridges = []
-    for y in sample(ty0 + 14, ty1 - 14, 7):
-        x1 = left_edge(y) + 12
-        x2 = flank_inner(y) - 12
-        ridges.append(f'    <line x1="{x1:.1f}" y1="{y:.1f}" x2="{x2:.1f}" '
-                      f'y2="{y:.1f}"/>')
+    for y in sample(ty0 + 12, ty1 - 12, 7):
+        # las estrias se recortan a la elipse: fuera de ella no hay rueda
+        dx = pw_rx * math.sqrt(max(0.0, 1 - ((y - pw_cy) / pw_ry) ** 2)) - 3
+        if dx > 3:
+            ridges.append(f'    <line x1="{pw_cx - dx:.1f}" y1="{y:.1f}" '
+                          f'x2="{pw_cx + dx:.1f}" y2="{y:.1f}"/>')
     ridges = "\n".join(ridges)
+
+    # ── marcas de GIRO ────────────────────────────────────────────────────────
+    # Una rueda gira, no se pulsa. Su marca tiene que decir eso, no ser un punto
+    # de boton mas. La rueda central lleva una flecha de doble sentido (sube y
+    # baja) y cada mitad de la ruleta del pulgar su arco, en sentidos opuestos.
+    gcx = (wx0 + wx1) / 2
+    gy0, gy1 = WHEEL_Y0 + 22, WHEEL_Y1 - 22
+    flecha_scroll = (
+        f'  <path d="M {gcx:.1f} {gy0:.1f} V {gy1:.1f} '
+        f'M {gcx - 6.5:.1f} {gy0 + 7.5:.1f} L {gcx:.1f} {gy0:.1f} '
+        f'L {gcx + 6.5:.1f} {gy0 + 7.5:.1f} '
+        f'M {gcx - 6.5:.1f} {gy1 - 7.5:.1f} L {gcx:.1f} {gy1:.1f} '
+        f'L {gcx + 6.5:.1f} {gy1 - 7.5:.1f}" fill="none" stroke="#ffffff" '
+        f'stroke-opacity=".55" stroke-width="1.5" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>')
+    p_cx = pw_cx
+    p_r = max(6.5, min(13.0, pw_rx * 0.60))
+    flechas_pulgar = "\n".join(
+        f'  <path d="{d}" fill="none" stroke="#ffffff" stroke-opacity=".5" '
+        f'stroke-width="1.5" stroke-linecap="round"/>\n'
+        f'  <path d="{p}" fill="#ffffff" fill-opacity=".5"/>'
+        for d, p in (arco_flecha(p_cx, (ty0 + mid) / 2, p_r, sentido=1),
+                     arco_flecha(p_cx, (mid + ty1) / 2, p_r, sentido=-1)))
 
     # ── boton de MODOS, junto al clic izquierdo ───────────────────────────────
     # Aqui habia tres "botones de perfil" apilados en el flanco, y estaban mal por
@@ -619,6 +776,16 @@ def build_svg() -> str:
   <linearGradient id="g-plate" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0%" stop-color="var(--mg-plate-hi)"/>
     <stop offset="100%" stop-color="var(--mg-plate)"/>
+  </linearGradient>
+  <!-- Cilindro: degradado TRANSVERSAL (oscuro en los cantos, claro en la cresta).
+       Es lo que hace que una pieza se lea como cilindro. Un relleno plano con
+       rayas horizontales es un boton con rejilla, y una rueda no es un boton. -->
+  <linearGradient id="g-cilindro" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"   stop-color="#0b0f16"/>
+    <stop offset="26%"  stop-color="#4d5b6e"/>
+    <stop offset="44%"  stop-color="#8595aa"/>
+    <stop offset="58%"  stop-color="#5c6b7f"/>
+    <stop offset="100%" stop-color="#0b0f16"/>
   </linearGradient>
   <linearGradient id="g-flank" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0%" stop-color="var(--mg-gap)"/>
@@ -695,43 +862,48 @@ def build_svg() -> str:
 </g>
 
 <!-- canal y rueda central -->
-<path d="{channel}" fill="#080a0f"/>
+{lip_banda}<path d="{channel}" fill="#080a0f"/>
 <path d="{channel_lip}" fill="none" stroke="#3d4a5f" stroke-width="1.3"/>
 <g class="z" data-zone="btn-scroll" data-usage="3" tabindex="0" role="button"
    aria-label="Clic de la rueda">
+  <!-- Cuerpo en CAPSULA (rx = media anchura) con el degradado de cilindro. -->
   <rect class="hit" x="{wx0:.0f}" y="{WHEEL_Y0:.0f}"
-        width="{2 * WHEEL_X_HALF:.0f}" height="{WHEEL_Y1 - WHEEL_Y0:.0f}" rx="14"
-        fill="#151a23" stroke="#0b0e14" stroke-width="1.6"/>
-  <!-- luz lateral: es lo que hace que se lea como un cilindro y no como una rejilla -->
-  <rect x="{wx0 + 3:.0f}" y="{WHEEL_Y0 + 5:.0f}" width="7"
-        height="{WHEEL_Y1 - WHEEL_Y0 - 10:.0f}" rx="3.5" fill="#39465a"
-        opacity=".7"/>
-  <!-- reflejo especular arriba: el brillo de una superficie cilindrica -->
-  <ellipse cx="{(wx0 + wx1) / 2:.0f}" cy="{WHEEL_Y0 + 18:.0f}"
-           rx="{WHEEL_X_HALF - 7:.0f}" ry="7" fill="#ffffff" opacity=".32"/>
-  <g stroke="#2f3a4c" stroke-width="1.2" opacity=".9">
+        width="{wx1 - wx0:.0f}" height="{WHEEL_Y1 - WHEEL_Y0:.0f}"
+        rx="{WHEEL_X_HALF:.0f}" fill="url(#g-cilindro)" stroke="#0b0e14"
+        stroke-width="1.6"/>
+  <g stroke="#2f3a4c" stroke-width="1.2" opacity=".5">
 {wheel_ridges}
   </g>
+  <!-- reflejo especular arriba: el brillo de una superficie cilindrica -->
+  <ellipse cx="{(wx0 + wx1) / 2:.0f}" cy="{WHEEL_Y0 + 14:.0f}"
+           rx="{WHEEL_X_HALF - 9:.0f}" ry="5" fill="#ffffff" opacity=".35"/>
+  <!-- la marca de GIRO: esto sube y baja, no se pulsa -->
+{flecha_scroll}
 </g>
 
 <!-- controles del panel lateral -->
 {side_svg}
 
-<!-- rueda del pulgar -->
-<path d="{tw}" fill="var(--recess)" stroke="#3a4761" stroke-width="1.3"/>
+<!-- rueda del pulgar: capsula con degradado de cilindro, reflejo y estrias -->
+<path d="{tw}" fill="url(#g-cilindro)" stroke="#0b0e14" stroke-width="1.6"/>
 <g class="z" data-zone="thumb-cw" data-usage="{u_cw}" tabindex="0" role="button"
    aria-label="Rueda del pulgar · horaria">
-  <path class="hit" d="{tw_top}" fill="#252f3d" stroke="#0b0e14"
+  <path class="hit" d="{tw_top}" fill="url(#g-cilindro)" stroke="#0b0e14"
         stroke-width="1.6"/>
 </g>
 <g class="z" data-zone="thumb-ccw" data-usage="{u_ccw}" tabindex="0"
    role="button" aria-label="Rueda del pulgar · antihoraria">
-  <path class="hit" d="{tw_bot}" fill="#252f3d" stroke="#0b0e14"
+  <path class="hit" d="{tw_bot}" fill="url(#g-cilindro)" stroke="#0b0e14"
         stroke-width="1.6"/>
 </g>
-<g stroke="#39465a" stroke-width="1" opacity=".4">
+<g stroke="#39465a" stroke-width="1" opacity=".45">
 {ridges}
 </g>
+<ellipse cx="{pw_cx:.1f}" cy="{ty0 + 13:.1f}" rx="{pw_rx * 0.5:.1f}" ry="5"
+         fill="#ffffff" opacity=".34"/>
+<!-- La ruleta del pulgar GIRA en dos sentidos: un arco por mitad, opuestos.
+     Con un punto de boton cada mitad no se entendia que fueran la misma rueda. -->
+{flechas_pulgar}
 
 <!-- botones de perfil -->
 {mode_svg}
@@ -755,8 +927,10 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # El contorno medido sobre la imagen, si existe, manda sobre el perfil
-    # inventado: es lo que hace que el dibujo y la imagen encajen.
-    global _CONTORNO, _EJE
+    # inventado: es lo que hace que el dibujo y la imagen encajen. Y el interior
+    # medido (trazar-interior.py) manda sobre las constantes PLATE_*/WHEEL_*
+    # para que tambien por dentro el dibujo sea una traza de la imagen.
+    global _CONTORNO, _EJE, _INTERIOR, PLATE_Y0, PLATE_Y1, WHEEL_Y0, WHEEL_Y1
     ruta_sil = here / "rat9/ui/silueta.json"
     if ruta_sil.is_file():
         cont = json.loads(ruta_sil.read_text())
@@ -764,6 +938,27 @@ def main() -> int:
         _EJE = _eje_medido(cont)
         print(f"contorno medido de {cont['origen']} ({cont['medido']}): "
               f"eje del cuerpo x = {_EJE:.0f}")
+    ruta_interior = here / "rat9/ui/interior.json"
+    if ruta_interior.is_file():
+        inter = json.loads(ruta_interior.read_text())
+        if isinstance(inter, dict):
+            _INTERIOR = inter
+            costura = _INTERIOR.get("costura_central") or {}
+            if costura.get("u_izq") is not None:
+                _EJE = _map_x(costura["u_izq"])
+            if costura.get("y0_v") is not None:
+                PLATE_Y0 = _map_y(costura["y0_v"])
+            if costura.get("y1_v") is not None:
+                PLATE_Y1 = _map_y(costura["y1_v"])
+            if "rueda" in _INTERIOR:
+                r = _INTERIOR["rueda"]
+                WHEEL_Y0 = _map_y(r["y0_v"])
+                WHEEL_Y1 = _map_y(r["y1_v"])
+            _npanel = len(_INTERIOR.get("panel_lateral_izq") or [])
+            print(f"interior medido ({_INTERIOR['origen']}): tapas y "
+                  f"{PLATE_Y0:.0f}..{PLATE_Y1:.0f} (eje x {_EJE:.0f}), "
+                  f"rueda y {WHEEL_Y0:.0f}..{WHEEL_Y1:.0f}, "
+                  f"{_npanel} filas del panel")
 
     svg = tokenizar_cuerpo(build_svg())
     out.write_text(svg)

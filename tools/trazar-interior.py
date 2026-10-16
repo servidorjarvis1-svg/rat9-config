@@ -71,13 +71,15 @@ OSCURA_MAX = 0.36            # luminancia media de fila para contar como rueda
 ESTRIA_FRAC = 0.30
 ESTRIA_MIN = 0.025
 
-FLANCO_V = (0.265, 0.78)     # filas donde se busca el borde del panel: el panel
+FLANCO_V = (0.265, 0.74)     # filas donde se busca el borde del panel: el panel
                              # existe en la imagen de ~y380 a ~y860; fuera de ese
                              # tramo el buscador encuentra valles falsos (el
                              # brillo del talón) y los omitimos por diseño
 FLANCO_WIN = (118, 285)      # ventana absoluta donde puede caer el valle oscuro
 VALLE_LUM = 0.20             # un valle es luminancia suavizada por debajo
-VALLE_AREA = 0.9             # área mínima (px*0..1) para no tragarse ruido
+VALLE_AREA = 0.5             # área mínima (px*0..1) para no tragarse ruido: las
+                             # filas altas del panel son poco profundas (0.08) y
+                             # su valle no pasa de ~1.0
 INSET_LUM = 0.30             # a la IZQUIERDA del valle del panel hay panel
                              # (oscuro); a la izquierda del valle del bisel del
                              # casco hay un brillo alto. Discrimina los dos.
@@ -279,12 +281,16 @@ def main() -> int:
     lip_y0 = None
     lip_x0 = lip_x1 = None
     if lip_filas:
-        for y in range(lip_filas[0], ry0b):
-            if suave_f[y] < 0.34:
-                lip_y0 = y - 2
+        # TOPE del labio = donde la franja ENTRA en claro de forma sostenida.
+        # No sirve buscar la última fila clara: entre el morro y el labio la
+        # franja pasa de negro a claro sin volver a caer, y tomar la primera
+        # fila con pico suelto la clavaba al morro del ratón (y=124).
+        for y in range(y0 + 2, ry0b):
+            if suave_f[y] > 0.42 and suave_f[y:y + 14].mean() > 0.42:
+                lip_y0 = y
                 break
-        percol_lip = g[lip_filas[0] + 4:ry0b - 4, xa:xb].mean(axis=0)
-        lis = np.flatnonzero(percol_lip > 0.40)
+        percol_lip = g[lip_y0 + 4:ry0b - 4, xa:xb].mean(axis=0) if lip_y0 else None
+        lis = np.flatnonzero(percol_lip > 0.40) if percol_lip is not None else []
         if len(lis) and lis[-1] - lis[0] > 20:
             lip_x0, lip_x1 = xa + int(lis[0]), xa + int(lis[-1])
         else:
@@ -340,32 +346,39 @@ def main() -> int:
                 ini = None
         if ini is not None:
             runs.append((ini, len(bajos)))
-        # clasifica por área (el valle del panel es ancho y profundo)
-        candidatos = []
-        for r0, r1 in runs:
-            area = float((VALLE_LUM - prof[r0:r1]).clip(0).sum())
-            if area >= VALLE_AREA:
-                candidatos.append((area, r0, r1))
-        if not candidatos:
-            descartadas.append((y, "valle débil"))
-            continue
-        candidatos.sort(reverse=True)
+        # clasifica por PROFUNDIDAD (el valle del panel es un pozo nítido; la
+        # área sola premia las zonas oscuras anchas de los biseles). Los valles
+        # que arrancan pegados al borde izquierdo de la ventana no se pueden
+        # verificar por la izquierda, pero ahí hay panel en esta imagen, así que
+        # se dan por buenos; los demás exigen oscuro a su izquierda.
+        orden = sorted(runs, key=lambda r: float(prof[r[0]:r[1]].min()))
         elegido = None
-        for area, r0, r1 in candidatos[:3]:
-            if r0 >= 25:
-                izquierda = float(prof[max(0, r0 - 25):r0].mean())
-            else:
-                izquierda = 1.0
-            if izquierda <= INSET_LUM:
+        for r0, r1 in orden:
+            area = float((VALLE_LUM - prof[r0:r1]).clip(0).sum())
+            if area < VALLE_AREA:
+                continue
+            if r0 <= 30:
+                elegido = (r0, r1)
+                break
+            if float(prof[max(0, r0 - 25):r0].mean()) <= INSET_LUM:
                 elegido = (r0, r1)
                 break
         if elegido is None:
-            # todos los valles tienen brillo a la izquierda: el de más área es
-            # lo mejor que hay en esta fila (pasa justo donde el mando del
-            # pulgar toca el canto); se anota para no olvidarlo
-            elegido = (candidatos[0][1], candidatos[0][2])
-        centro = w0 + int(np.argmin(prof[elegido[0]:elegido[1]]))
-        filas_tabla.append(((y - y0) / hp, (centro - x0) / wp, 1.0))
+            descartadas.append((y, "sin valle del panel"))
+            continue
+        # el BORDE es donde el oscuro DEVUELVE a carcasa, no el punto más bajo
+        # del valle: el mínimo puede caer en cualquier sombra interior del
+        # panel (mandos, muescas), mientras que el contorno del panel es la
+        # transición de vuelta a >=0.24 hacia la derecha.
+        lo = int(np.argmin(prof[elegido[0]:elegido[1]])) + elegido[0]
+        borde = None
+        for i in range(lo, elegido[1]):
+            if prof[i] >= VALLE_LUM + 0.035:
+                borde = w0 + i
+                break
+        if borde is None:
+            borde = w0 + elegido[1]
+        filas_tabla.append(((y - y0) / hp, (borde - x0) / wp, 1.0))
     # mediana de 3 sobre la serie de bordes: el mando del pulgar deja valles
     # falsos un poco más a la izquierda en alguna fila; la mediana los absorbe
     us = np.array([u for _, u, _ in filas_tabla])
