@@ -351,7 +351,54 @@ Lo que sí está cerrado con medida: **la lectura funciona y está caracterizada
 (batería 92-93 %, perfil, registros por `wIndex`), y **la escritura directa no existe
 en este modo**.
 
-## 12. La lección de método que deja esto
+## 12. El mapa definitivo del aparato
+
+Se barrieron **768 registros** (`0x0000–0x01FF` y `0x1000–0x10FF`) y el aparato responde
+a **nueve**, que en realidad son **tres repetidos cuatro veces**:
+
+| registro | valor | qué es |
+|---|---|---|
+| `0x0B` | `1` | estado |
+| `0x74` | `0x10` → perfil **1** (o `0x40` → perfil 4, cambia con el botón) | perfil activo |
+| `0xBA` | `78`–`93` según carga | batería |
+
+Y los mismos tres aparecen en `0x0100`, `0x1000` y `0x1100`: o sea que el aparato
+**solo mira el byte bajo del `wIndex`** (los bits 8 a 15 le dan igual) y **tiene tres
+registros en total**. Nada más. Ésa es toda la superficie de mando del receptor.
+
+**El perfil va en el nibble alto** (`0x10` → 1, `0x40` → 4), y se mueve al pulsar el
+botón de perfiles del ratón: se vio cambiar en vivo de `16` a `64` y de vuelta. Eso
+valida la lectura.
+
+### Y una advertencia sobre el driver
+
+El INF del driver apunta a **este** aparato:
+
+```
+%HID_NAME%= _HID_Inst, HID\VID_0738&PID_1709
+```
+
+o sea que sí, el driver da servicio al receptor inalámbrico. **Pero** da servicio a
+varios productos Mad Catz a la vez (el propio INF deja ver la familia), y eso se nota:
+el registro `0x72` que el driver lee en su plantilla de petición **en este aparato no
+existe** — da PIPE. Así que las constantes sacadas del desensamblado hay que tomarlas
+con pinzas: pueden ser de otro producto de la familia.
+
+En `sys/` hay además un segundo driver para el mismo PID, `_usb_0738_1709.sys`, que es
+el que habla USB de verdad (el `_hid_` es el que parsea el perfil). **No se ha
+analizado en profundidad**: se desensambló y sus secciones no traen símbolos ni las
+constantes de petición a la vista, así que sacar de ahí la transferencia cruda es
+trabajo aparte y de resultado incierto.
+
+### El veredicto
+
+Con lo medido: **desde Linux, este ratón se puede leer y no se puede escribir.** No es
+una combinación que falte por encontrar: se probaron 20 combinaciones de destinatario y
+petición por 42 direcciones, todas PIPE, el aparato no declara ningún informe de
+escritura, y su superficie de mando son tres registros de solo lectura.
+
+
+## 13. La lección de método que deja esto
 
 Dos conclusiones se dieron por buenas en su día y las dos eran falsas, por la misma
 razón: **se leyó un "no falla" como un "funciona"**.
