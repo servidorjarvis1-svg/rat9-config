@@ -15,6 +15,7 @@ que se salgan o se pisen: se mueven solos cuando se mueve la silueta.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -294,6 +295,54 @@ def svg_badges() -> str:
     return "\n".join(out)
 
 
+# ─── capa para superponer al render ───────────────────────────────────────────
+# La imagen realista y el esquema son dos siluetas distintas: alinear solo la
+# CAJA deja las costuras desplazadas. Los numeros del encaje NO se escriben a
+# mano aqui: los mide tools/encajar-capa.py sobre la imagen y los deja en
+# rat9/ui/capa.json. Si cambia la imagen de base, se vuelve a correr y listo;
+# escritos a mano se desincronizarian en silencio.
+CAPA_JSON = None
+
+
+def cargar_encaje(here: Path) -> dict:
+    """Encaje medido sobre la imagen base. Si no hay, se usan los del render
+    generado, que es el que habia cuando se escribio esto."""
+    ruta = here / "rat9/ui/capa.json"
+    if ruta.is_file():
+        return json.loads(ruta.read_text())
+    return {
+        "viewbox": [720, 931],
+        "bbox_imagen": [134.0, 135.0, 452.0, 658.0],
+        "bbox_esquema": [44.0, 28.0, 362.0, 556.0],
+    }
+
+
+def envolver_para_imagen(svg: str, encaje: dict) -> str:
+    """Deja el dibujo listo para ir ENCIMA de la imagen, como segunda capa.
+
+    Mismo tamano que la imagen y la geometria transformada a la caja donde ha
+    caido el raton en ella. Asi las dos capas se superponen en el navegador con
+    un simple width:100% en ambas, sin calculos en CSS (que es donde se
+    desincronizarian sin que nadie se enterase).
+    """
+    vw, vh = encaje["viewbox"]
+    ex, ey, ew, eh = encaje["bbox_esquema"]
+    ix, iy, iw, ih = encaje["bbox_imagen"]
+    sx, sy = iw / ew, ih / eh
+    tx, ty = ix - sx * ex, iy - sy * ey
+
+    svg = svg.replace('viewBox="0 0 560 800"', f'viewBox="0 0 {vw} {vh}"')
+    svg = svg.replace('class="mouse-diagram"',
+                      'class="mouse-diagram capa-render"')
+    # El <g> va DESPUES de </defs> y envuelve solo el dibujo: si se mete tras
+    # </title> (que fue el primer intento) el elemento cae DENTRO del texto del
+    # titulo y el SVG deja de ser XML valido.
+    abre = svg.index("</defs>") + len("</defs>")
+    transform = (f'\n<g transform="translate({tx:.2f} {ty:.2f}) '
+                 f'scale({sx:.5f} {sy:.5f})">')
+    return svg[:abre] + transform + svg[abre:].replace("</svg>", "</g>\n</svg>")
+
+
 def build_svg() -> str:
     # ── silueta ──────────────────────────────────────────────────────────────
     ys_right = [p[0] for p in PROFILE]
@@ -551,6 +600,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     here = Path(__file__).resolve().parent.parent
     ap.add_argument("--out", default=str(here / "rat9/ui/diagram-mouse.svg"))
+    ap.add_argument("--out-capa",
+                    default=str(here / "rat9/ui/diagram-overlay.svg"),
+                    help="segunda capa, ya ajustada al render")
     a = ap.parse_args()
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -558,6 +610,13 @@ def main() -> int:
     out.write_text(svg)
     zones = svg.count('class="z"')
     print(f"escrito: {out}  ({len(svg)} bytes, {zones} zonas)")
+    # la capa para el render sale del MISMO dibujo: si se cambia uno, cambian
+    # los dos, y no pueden desincronizarse
+    if a.out_capa:
+        capa = Path(a.out_capa)
+        encaje = cargar_encaje(here)
+        capa.write_text(envolver_para_imagen(svg, encaje))
+        print(f"escrito: {capa}  (capa para {encaje.get('imagen', 'el render')})")
     return 0
 
 

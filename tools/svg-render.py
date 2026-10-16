@@ -45,7 +45,7 @@ def resolve_tokens(svg: str) -> tuple[str, dict[str, str]]:
     return svg, tokens
 
 
-def theme_vars(app_css: Path) -> dict[str, str]:
+def theme_vars(app_css: Path, selector: str = ".device-frame") -> dict[str, str]:
     """Saca los --mg-* que la app define para el diagrama.
 
     Sin esto se previsualiza el SVG con SUS valores por defecto, que no son los
@@ -55,10 +55,11 @@ def theme_vars(app_css: Path) -> dict[str, str]:
     if not app_css or not app_css.is_file():
         return {}
     txt = app_css.read_text()
-    # Hay VARIOS bloques .device-frame (uno para el tamano y otro para las
-    # variables). Con buscar solo el primero salian 0 variables.
+    # Hay VARIOS bloques con el mismo selector (uno para el tamano y otro para
+    # las variables). Con buscar solo el primero salian 0 variables.
+    pat = re.escape(selector) + r"\s*\{(.*?)\}"
     vars_: dict[str, str] = {}
-    for m in re.finditer(r"\.device-frame\s*\{(.*?)\}", txt, re.S):
+    for m in re.finditer(pat, txt, re.S):
         vars_.update(re.findall(r"(--mg-[a-z0-9-]+)\s*:\s*([^;]+);", m.group(1)))
     return vars_
 
@@ -82,6 +83,10 @@ def main() -> int:
     ap.add_argument("--theme", default="rat9/ui/css/app.css",
                     help="hoja de la app de la que tomar los --mg-* (por defecto "
                          "se busca sola; 'no' para desactivar)")
+    ap.add_argument("--tokens", default=".device-frame",
+                    help="bloque de la hoja del que salen los --mg-*: "
+                         ".device-frame (esquema) o .capa-render (plano encima "
+                         "del render)")
     args = ap.parse_args()
 
     src = Path(args.svg)
@@ -91,9 +96,10 @@ def main() -> int:
     print(f"tokens resueltos: {len(tokens)}")
 
     if args.theme and str(args.theme).lower() not in ("no", "none", ""):
-        tema = theme_vars(Path(args.theme))
+        tema = theme_vars(Path(args.theme), args.tokens)
         svg = aplicar_tema(svg, tema)
-        print(f"tema de la app aplicado: {len(tema)} variables --mg-*")
+        print(f"tema de la app aplicado: {len(tema)} variables --mg-* "
+              f"(de {args.tokens})")
 
     with tempfile.NamedTemporaryFile("w", suffix=".svg", delete=False) as fh:
         fh.write(svg)

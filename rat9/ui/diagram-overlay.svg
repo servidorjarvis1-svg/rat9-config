@@ -1,0 +1,280 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1090"
+     class="mouse-diagram capa-render" role="img"
+     aria-label="Diagrama del Mad Catz R.A.T.9, vista superior esquemática">
+<title>R.A.T.9 — controles</title>
+<style>
+  /* Valores por defecto del propio dibujo, para que el SVG se pueda
+     previsualizar suelto (tools/svg-render.py). La app le QUITA este bloque y
+     pone los suyos a traves de las variables --mg-*: asi el raton no acaba
+     siendo un dibujo aparte con su propia paleta. */
+  .mouse-diagram {
+    --mg-shell:      #171d28;
+    --mg-shell-hi:   #232c3c;
+    --mg-edge:       #3a4761;
+    --mg-plate:      #1e2632;
+    --mg-plate-hi:   #2b3543;
+    --mg-palm:       #1e2632;
+    --mg-recess:     #080a0f;
+    --mg-control:    #252f3d;
+    --mg-control-hi: #3b4859;
+    --mg-seam:       #2b3543;
+    --mg-ridge:      #39465a;
+    --mg-gap:        #0b0e14;
+    --mg-ink:        #93a7c3;
+    --mg-guide:      #5c7691;
+    --mg-badge-bg:   #0b0e14;
+    --mg-badge-edge: #93a7c3;
+    --mg-luz:        #ffffff;
+  }
+  .mouse-diagram .badge text {
+    fill: var(--mg-ink); font-family: ui-monospace, monospace;
+    font-weight: 600; letter-spacing: .02em;
+  }
+  .mouse-diagram .z { cursor: pointer; }
+  .mouse-diagram .z .hit { transition: fill .16s ease, stroke .16s ease; }
+  .mouse-diagram .z:hover .hit { fill: var(--mg-control-hi); stroke: var(--mg-edge); }
+  .mouse-diagram .z:focus-visible { outline: none; }
+  .mouse-diagram .z:focus-visible .hit { stroke: var(--mg-edge); stroke-width: 2.6; }
+  .mouse-diagram .z.sel .hit { stroke: var(--mg-edge); stroke-width: 2.6; }
+  .mouse-diagram.sel-mode .z:not(.sel) .hit { opacity: .55; }
+  .mouse-diagram .lbl { fill: var(--mg-ink); font: 10px ui-monospace, monospace; }
+</style>
+
+<defs>
+  <linearGradient id="g-shell" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="var(--mg-shell-hi)"/>
+    <stop offset="60%" stop-color="var(--mg-shell)"/>
+  </linearGradient>
+  <linearGradient id="g-plate" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="var(--mg-plate-hi)"/>
+    <stop offset="100%" stop-color="var(--mg-plate)"/>
+  </linearGradient>
+  <linearGradient id="g-flank" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="var(--mg-gap)"/>
+    <stop offset="100%" stop-color="var(--mg-recess)"/>
+  </linearGradient>
+
+  <!-- Banda de luz diagonal: da volumen al cuerpo sin fingir un 3D.
+       Los valores estan SUBIDOS a proposito: la primera version iba al 8% de
+       opacidad y sobre un fondo oscuro no se veia nada. -->
+  <linearGradient id="g-luz" x1="0.12" y1="0" x2="0.88" y2="1">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="36%"  stop-color="#ffffff" stop-opacity=".17"/>
+    <stop offset="52%"  stop-color="#ffffff" stop-opacity=".075"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Filo iluminado: de claro arriba a nada. Es el canto achaflanado de una
+       pieza cogiendo la luz, y es lo que separa "esquema" de "ilustracion". -->
+  <linearGradient id="g-filo" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity=".5"/>
+    <stop offset="24%"  stop-color="#ffffff" stop-opacity=".26"/>
+    <stop offset="70%"  stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Oclusion: oscurece los bordes de una pieza, que es como se lee el volumen -->
+  <radialGradient id="g-oclusion" cx="0.5" cy="0.45" r="0.62">
+    <stop offset="50%"  stop-color="#000000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity=".68"/>
+  </radialGradient>
+</defs>
+<g transform="translate(-73.26 75.96) scale(1.89227 1.71583)">
+
+<!-- casco -->
+<path d="M 338.0 60.0 C 359.3 64.2 345.7 75.8 350.0 85.0 C 354.3 94.2 359.3 103.3 364.0 115.0 C 368.7 126.7 373.7 140.0 378.0 155.0 C 382.3 170.0 386.7 186.7 390.0 205.0 C 393.3 223.3 396.0 245.0 398.0 265.0 C 400.0 285.0 401.0 304.2 402.0 325.0 C 403.0 345.8 403.7 369.2 404.0 390.0 C 404.3 410.8 404.3 430.0 404.0 450.0 C 403.7 470.0 403.0 491.7 402.0 510.0 C 401.0 528.3 399.7 545.0 398.0 560.0 C 396.3 575.0 395.0 586.7 392.0 600.0 C 389.0 613.3 384.7 628.3 380.0 640.0 C 375.3 651.7 371.0 660.0 364.0 670.0 C 357.0 680.0 361.7 695.0 338.0 700.0 C 314.3 705.0 245.7 705.0 222.0 700.0 C 198.3 695.0 203.0 680.0 196.0 670.0 C 189.0 660.0 184.7 651.7 180.0 640.0 C 175.3 628.3 172.3 613.3 168.0 600.0 C 163.7 586.7 162.1 575.0 154.0 560.0 C 145.9 545.0 128.3 528.3 119.2 510.0 C 110.0 491.7 101.8 470.0 99.2 450.0 C 96.7 430.0 97.9 410.8 104.0 390.0 C 110.1 369.2 126.0 345.8 135.7 325.0 C 145.3 304.2 156.3 285.0 162.0 265.0 C 167.7 245.0 166.7 223.3 170.0 205.0 C 173.3 186.7 177.7 170.0 182.0 155.0 C 186.3 140.0 191.3 126.7 196.0 115.0 C 200.7 103.3 205.7 94.2 210.0 85.0 C 214.3 75.8 200.7 64.2 222.0 60.0 C 243.3 55.8 316.7 55.8 338.0 60.0 Z" fill="url(#g-shell)" stroke="var(--mg-edge)" stroke-width="1.6"/>
+<!-- banda de luz: el cuerpo deja de ser una silueta plana -->
+<path d="M 338.0 60.0 C 359.3 64.2 345.7 75.8 350.0 85.0 C 354.3 94.2 359.3 103.3 364.0 115.0 C 368.7 126.7 373.7 140.0 378.0 155.0 C 382.3 170.0 386.7 186.7 390.0 205.0 C 393.3 223.3 396.0 245.0 398.0 265.0 C 400.0 285.0 401.0 304.2 402.0 325.0 C 403.0 345.8 403.7 369.2 404.0 390.0 C 404.3 410.8 404.3 430.0 404.0 450.0 C 403.7 470.0 403.0 491.7 402.0 510.0 C 401.0 528.3 399.7 545.0 398.0 560.0 C 396.3 575.0 395.0 586.7 392.0 600.0 C 389.0 613.3 384.7 628.3 380.0 640.0 C 375.3 651.7 371.0 660.0 364.0 670.0 C 357.0 680.0 361.7 695.0 338.0 700.0 C 314.3 705.0 245.7 705.0 222.0 700.0 C 198.3 695.0 203.0 680.0 196.0 670.0 C 189.0 660.0 184.7 651.7 180.0 640.0 C 175.3 628.3 172.3 613.3 168.0 600.0 C 163.7 586.7 162.1 575.0 154.0 560.0 C 145.9 545.0 128.3 528.3 119.2 510.0 C 110.0 491.7 101.8 470.0 99.2 450.0 C 96.7 430.0 97.9 410.8 104.0 390.0 C 110.1 369.2 126.0 345.8 135.7 325.0 C 145.3 304.2 156.3 285.0 162.0 265.0 C 167.7 245.0 166.7 223.3 170.0 205.0 C 173.3 186.7 177.7 170.0 182.0 155.0 C 186.3 140.0 191.3 126.7 196.0 115.0 C 200.7 103.3 205.7 94.2 210.0 85.0 C 214.3 75.8 200.7 64.2 222.0 60.0 C 243.3 55.8 316.7 55.8 338.0 60.0 Z" fill="url(#g-luz)"/>
+
+<!-- panel lateral izquierdo: la superficie donde vive el pulgar.
+     Sin textura de cepillado: probada, competia con los controles y a este
+     tamano parecia una trama grafica, no un acabado. -->
+<path d="M 196.0 115.0 C 193.7 121.7 186.3 140.0 182.0 155.0 C 177.7 170.0 173.3 186.7 170.0 205.0 C 166.7 223.3 167.7 245.0 162.0 265.0 C 156.3 285.0 145.3 304.2 135.7 325.0 C 126.0 345.8 110.1 369.2 104.0 390.0 C 97.9 410.8 96.7 430.0 99.2 450.0 C 101.8 470.0 110.0 491.7 119.2 510.0 C 128.3 528.3 145.9 545.0 154.0 560.0 C 162.1 575.0 163.7 586.7 168.0 600.0 C 172.3 613.3 175.3 628.3 180.0 640.0 C 184.7 651.7 189.0 660.0 196.0 670.0 C 203.0 680.0 217.7 695.0 222.0 700.0 L 274.0 700.0 C 269.7 695.0 254.9 680.0 248.0 670.0 C 241.1 660.0 235.1 651.7 232.4 640.0 C 229.7 628.3 232.3 613.3 232.0 600.0 C 231.7 586.7 234.9 575.0 230.5 560.0 C 226.2 545.0 212.7 528.3 206.1 510.0 C 199.6 491.7 196.0 470.0 191.2 450.0 C 186.5 430.0 178.0 410.8 177.7 390.0 C 177.3 369.2 184.4 345.8 188.9 325.0 C 193.5 304.2 201.9 285.0 205.0 265.0 C 208.1 245.0 205.7 223.3 207.6 205.0 C 209.4 186.7 212.7 170.0 215.9 155.0 C 219.1 140.0 224.8 121.7 226.6 115.0 Z" fill="url(#g-flank)"/>
+
+<!-- reposamanos: la oclusion en los bordes es lo que le da forma -->
+<path d="M 400.7 302.0 C 400.9 305.8 401.4 310.3 402.0 325.0 C 402.6 339.7 403.7 369.2 404.0 390.0 C 404.3 410.8 404.3 430.0 404.0 450.0 C 403.7 470.0 403.0 491.7 402.0 510.0 C 401.0 528.3 399.7 545.0 398.0 560.0 C 396.3 575.0 395.0 586.7 392.0 600.0 C 389.0 613.3 384.7 628.3 380.0 640.0 C 375.3 651.7 371.0 660.0 364.0 670.0 C 357.0 680.0 342.3 695.0 338.0 700.0 L 274.0 700.0 C 269.7 695.0 254.9 680.0 248.0 670.0 C 241.1 660.0 235.1 651.7 232.4 640.0 C 229.7 628.3 232.3 613.3 232.0 600.0 C 231.7 586.7 234.9 575.0 230.5 560.0 C 226.2 545.0 212.7 528.3 206.1 510.0 C 199.6 491.7 196.0 470.0 191.2 450.0 C 186.5 430.0 178.0 410.8 177.7 390.0 C 177.3 369.2 185.2 339.7 188.9 325.0 C 192.6 310.3 198.1 305.8 199.9 302.0 Z" fill="var(--mg-plate)"/>
+<path d="M 400.7 302.0 C 400.9 305.8 401.4 310.3 402.0 325.0 C 402.6 339.7 403.7 369.2 404.0 390.0 C 404.3 410.8 404.3 430.0 404.0 450.0 C 403.7 470.0 403.0 491.7 402.0 510.0 C 401.0 528.3 399.7 545.0 398.0 560.0 C 396.3 575.0 395.0 586.7 392.0 600.0 C 389.0 613.3 384.7 628.3 380.0 640.0 C 375.3 651.7 371.0 660.0 364.0 670.0 C 357.0 680.0 342.3 695.0 338.0 700.0 L 274.0 700.0 C 269.7 695.0 254.9 680.0 248.0 670.0 C 241.1 660.0 235.1 651.7 232.4 640.0 C 229.7 628.3 232.3 613.3 232.0 600.0 C 231.7 586.7 234.9 575.0 230.5 560.0 C 226.2 545.0 212.7 528.3 206.1 510.0 C 199.6 491.7 196.0 470.0 191.2 450.0 C 186.5 430.0 178.0 410.8 177.7 390.0 C 177.3 369.2 185.2 339.7 188.9 325.0 C 192.6 310.3 198.1 305.8 199.9 302.0 Z" fill="url(#g-oclusion)"/>
+<!-- estructura del reposamanos: junta de ajuste y escala grabada -->
+<g stroke="var(--mg-plate-hi)" stroke-width="1" fill="none">
+  <path d="M 191 398 Q 280 410 388 392"/>
+    <line x1="287.4" y1="516.0" x2="353.8" y2="516.0"/>
+  <line x1="287.4" y1="504.0" x2="287.4" y2="516.0"/>
+  <line x1="294.0" y1="509.0" x2="294.0" y2="516.0"/>
+  <line x1="300.7" y1="509.0" x2="300.7" y2="516.0"/>
+  <line x1="307.3" y1="509.0" x2="307.3" y2="516.0"/>
+  <line x1="314.0" y1="509.0" x2="314.0" y2="516.0"/>
+  <line x1="320.6" y1="504.0" x2="320.6" y2="516.0"/>
+  <line x1="327.2" y1="509.0" x2="327.2" y2="516.0"/>
+  <line x1="333.9" y1="509.0" x2="333.9" y2="516.0"/>
+  <line x1="340.5" y1="509.0" x2="340.5" y2="516.0"/>
+  <line x1="347.2" y1="509.0" x2="347.2" y2="516.0"/>
+  <line x1="353.8" y1="504.0" x2="353.8" y2="516.0"/>
+</g>
+
+<!-- botones principales -->
+<g class="z" data-zone="btn-left" data-usage="1" tabindex="0" role="button"
+   aria-label="Botón izquierdo">
+  <path class="hit" d="M 253.7 64.0 C 251.8 67.5 246.6 76.5 242.5 85.0 C 238.4 93.5 233.1 103.3 229.1 115.0 C 225.1 126.7 221.6 140.0 218.4 155.0 C 215.2 170.0 211.9 186.7 210.1 205.0 C 208.2 223.3 208.8 249.2 207.5 265.0 C 206.2 280.8 203.3 294.2 202.5 300.0 L 277.0 300.0 C 277.0 294.2 277.0 280.8 277.0 265.0 C 277.0 249.2 277.0 223.3 277.0 205.0 C 277.0 186.7 277.0 170.0 277.0 155.0 C 277.0 140.0 277.0 126.7 277.0 115.0 C 277.0 103.3 277.0 93.5 277.0 85.0 C 277.0 76.5 277.0 67.5 277.0 64.0 Z" fill="url(#g-plate)" stroke="var(--mg-gap)"
+        stroke-width="2"/>
+  <path d="M 256.1 68.0 C 254.6 70.8 250.7 77.2 247.0 85.0 C 243.3 92.8 237.6 103.3 233.6 115.0 C 229.6 126.7 226.1 140.0 222.9 155.0 C 219.7 170.0 216.4 186.7 214.6 205.0 C 212.7 223.3 212.1 253.2 212.0 265.0 C 211.9 276.8 213.5 274.2 213.8 276.0" fill="none" stroke="url(#g-filo)"
+        stroke-width="1.8"/>
+</g>
+<g class="z" data-zone="btn-right" data-usage="2" tabindex="0" role="button"
+   aria-label="Botón derecho">
+  <path class="hit" d="M 335.3 64.0 C 337.2 67.5 342.3 76.5 346.5 85.0 C 350.7 93.5 355.8 103.3 360.5 115.0 C 365.2 126.7 370.2 140.0 374.5 155.0 C 378.8 170.0 383.2 186.7 386.5 205.0 C 389.8 223.3 392.8 249.2 394.5 265.0 C 396.2 280.8 396.6 294.2 397.0 300.0 L 283.0 300.0 C 283.0 294.2 283.0 280.8 283.0 265.0 C 283.0 249.2 283.0 223.3 283.0 205.0 C 283.0 186.7 283.0 170.0 283.0 155.0 C 283.0 140.0 283.0 126.7 283.0 115.0 C 283.0 103.3 283.0 93.5 283.0 85.0 C 283.0 76.5 283.0 67.5 283.0 64.0 Z" fill="url(#g-plate)" stroke="var(--mg-gap)"
+        stroke-width="2"/>
+  <path d="M 332.9 68.0 C 334.4 70.8 338.1 77.2 342.0 85.0 C 345.9 92.8 351.3 103.3 356.0 115.0 C 360.7 126.7 365.7 140.0 370.0 155.0 C 374.3 170.0 378.7 186.7 382.0 205.0 C 385.3 223.3 388.6 253.2 390.0 265.0 C 391.4 276.8 390.3 274.2 390.4 276.0" fill="none" stroke="url(#g-filo)"
+        stroke-width="1.8"/>
+</g>
+
+<!-- costuras funcionales: separacion de botones y de reposamanos -->
+<g stroke="var(--mg-plate-hi)" stroke-width="1">
+  <line x1="280" y1="69" x2="280"
+        y2="292"/>
+  <line x1="203" y1="302"
+        x2="398" y2="302"/>
+</g>
+
+<!-- canal y rueda central -->
+<path d="M 251 90 L 309 90 Q 313 90 313 96 L 313 258 Q 313 264 309 264 L 251 264 Q 247 264 247 258 L 247 96 Q 247 90 251 90 Z" fill="var(--mg-recess)"/>
+<path d="M 244 92 Q 280 83 316 92" fill="none" stroke="var(--mg-edge)" stroke-width="1.3"/>
+<g class="z" data-zone="btn-scroll" data-usage="3" tabindex="0" role="button"
+   aria-label="Clic de la rueda">
+  <rect class="hit" x="259" y="100"
+        width="42" height="152" rx="14"
+        fill="var(--mg-recess)" stroke="var(--mg-gap)" stroke-width="1.6"/>
+  <!-- luz lateral: es lo que hace que se lea como un cilindro y no como una rejilla -->
+  <rect x="262" y="105" width="7"
+        height="142" rx="3.5" fill="var(--mg-ridge)"
+        opacity=".7"/>
+  <!-- reflejo especular arriba: el brillo de una superficie cilindrica -->
+  <ellipse cx="280" cy="118"
+           rx="14" ry="7" fill="var(--mg-luz)" opacity=".32"/>
+  <g stroke="var(--mg-seam)" stroke-width="1.2" opacity=".9">
+    <line x1="273" y1="118.0" x2="297" y2="118.0"/>
+    <line x1="273" y1="147.0" x2="297" y2="147.0"/>
+    <line x1="273" y1="176.0" x2="297" y2="176.0"/>
+    <line x1="273" y1="205.0" x2="297" y2="205.0"/>
+    <line x1="273" y1="234.0" x2="297" y2="234.0"/>
+  </g>
+</g>
+
+<!-- controles del panel lateral -->
+  <g class="z" data-zone="btn-precision" data-usage="8" tabindex="0"
+     role="button" aria-label="Botón de precisión">
+    <path class="hit" d="M 188.2 152.0 L 187.4 161.6 L 185.0 171.3 L 181.7 180.9 L 178.4 190.5 L 176.3 200.2 L 175.9 209.8 L 174.8 219.5 L 173.2 229.1 L 171.3 238.7 L 169.5 248.4 L 168.3 258.0 L 198.0 258.0 L 197.9 248.4 L 199.3 238.7 L 200.9 229.1 L 201.8 219.5 L 201.9 209.8 L 201.3 200.2 L 202.4 190.5 L 204.7 180.9 L 207.3 171.3 L 209.4 161.6 L 210.0 152.0 Z" fill="var(--mg-control)"
+          stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+  <g class="z" data-zone="btn-forward" data-usage="5" tabindex="0"
+     role="button" aria-label="Adelante">
+    <path class="hit" d="M 167.6 276.0 L 167.3 280.9 L 166.9 285.8 L 166.4 290.7 L 165.9 295.6 L 158.0 300.5 L 156.9 305.5 L 154.2 310.4 L 150.5 315.3 L 146.2 320.2 L 141.6 325.1 L 137.3 330.0 L 180.3 330.0 L 182.9 325.1 L 185.8 320.2 L 188.8 315.3 L 191.3 310.4 L 193.2 305.5 L 194.0 300.5 L 201.8 295.6 L 201.9 290.7 L 201.8 285.8 L 201.4 280.9 L 200.8 276.0 Z" fill="var(--mg-control)"
+          stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+  <g class="z" data-zone="btn-back" data-usage="4" tabindex="0"
+     role="button" aria-label="Atrás">
+    <path class="hit" d="M 130.0 346.0 L 129.1 350.9 L 127.1 355.8 L 124.4 360.7 L 121.2 365.6 L 118.0 370.5 L 114.9 375.5 L 112.4 380.4 L 110.6 385.3 L 110.0 390.2 L 109.8 395.1 L 109.4 400.0 L 175.5 400.0 L 174.0 395.1 L 171.8 390.2 L 169.8 385.3 L 168.9 380.4 L 169.0 375.5 L 170.0 370.5 L 171.9 365.6 L 174.4 360.7 L 176.9 355.8 L 178.2 350.9 L 178.0 346.0 Z" fill="var(--mg-control)"
+          stroke="var(--mg-gap)" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+
+<!-- rueda del pulgar -->
+<path d="M 112.6 398.0 L 111.1 408.7 L 109.2 419.5 L 107.6 430.2 L 107.0 440.9 L 108.6 451.6 L 112.1 462.4 L 115.8 473.1 L 118.5 483.8 L 119.6 494.5 L 124.8 505.3 L 132.8 516.0 L 200.4 516.0 L 194.5 505.3 L 189.7 494.5 L 189.5 483.8 L 188.0 473.1 L 185.4 462.4 L 182.6 451.6 L 179.4 440.9 L 175.7 430.2 L 172.9 419.5 L 173.1 408.7 L 172.0 398.0 Z" fill="var(--recess)" stroke="var(--mg-edge)" stroke-width="1.3"/>
+<g class="z" data-zone="thumb-cw" data-usage="6" tabindex="0" role="button"
+   aria-label="Rueda del pulgar · horaria">
+  <path class="hit" d="M 112.6 398.0 L 111.9 403.4 L 111.1 408.7 L 110.2 414.1 L 109.2 419.5 L 108.3 424.8 L 107.6 430.2 L 107.1 435.5 L 107.0 440.9 L 107.5 446.3 L 108.6 451.6 L 110.2 457.0 L 184.0 457.0 L 182.6 451.6 L 181.2 446.3 L 179.4 440.9 L 177.6 435.5 L 175.7 430.2 L 174.0 424.8 L 172.9 419.5 L 172.5 414.1 L 173.1 408.7 L 173.1 403.4 L 172.0 398.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
+        stroke-width="1.6"/>
+</g>
+<g class="z" data-zone="thumb-ccw" data-usage="7" tabindex="0"
+   role="button" aria-label="Rueda del pulgar · antihoraria">
+  <path class="hit" d="M 110.2 457.0 L 112.1 462.4 L 114.0 467.7 L 115.8 473.1 L 117.4 478.5 L 118.5 483.8 L 119.0 489.2 L 119.6 494.5 L 121.7 499.9 L 124.8 505.3 L 128.6 510.6 L 132.8 516.0 L 200.4 516.0 L 197.5 510.6 L 194.5 505.3 L 191.7 499.9 L 189.7 494.5 L 189.5 489.2 L 189.5 483.8 L 189.0 478.5 L 188.0 473.1 L 186.8 467.7 L 185.4 462.4 L 184.0 457.0 Z" fill="var(--mg-control)" stroke="var(--mg-gap)"
+        stroke-width="1.6"/>
+</g>
+<g stroke="var(--mg-ridge)" stroke-width="1" opacity=".4">
+    <line x1="113.5" y1="412.0" x2="169.6" y2="412.0"/>
+    <line x1="111.0" y1="427.0" x2="171.7" y2="427.0"/>
+    <line x1="110.1" y1="442.0" x2="176.8" y2="442.0"/>
+    <line x1="113.2" y1="457.0" x2="181.0" y2="457.0"/>
+    <line x1="118.5" y1="472.0" x2="184.8" y2="472.0"/>
+    <line x1="121.9" y1="487.0" x2="186.5" y2="487.0"/>
+    <line x1="125.8" y1="502.0" x2="189.7" y2="502.0"/>
+</g>
+
+<!-- botones de perfil -->
+  <g class="z" data-zone="mode-1" data-usage="9"
+     tabindex="0" role="button" aria-label="Modo 1">
+    <rect class="hit" x="191.4" y="426.0" width="34.0" height="21.3"
+          rx="6" fill="url(#g-plate)"/>
+    <text class="lbl" x="208.4" y="440.7"
+          text-anchor="middle" font-size="14">1</text>
+  </g>
+  <g class="z" data-zone="mode-2" data-usage="10"
+     tabindex="0" role="button" aria-label="Modo 2">
+    <rect class="hit" x="199.6" y="451.3" width="34.0" height="21.3"
+          rx="6" fill="url(#g-plate)"/>
+    <text class="lbl" x="216.6" y="466.0"
+          text-anchor="middle" font-size="14">2</text>
+  </g>
+  <g class="z" data-zone="mode-3" data-usage="11"
+     tabindex="0" role="button" aria-label="Modo 3">
+    <rect class="hit" x="205.7" y="476.7" width="34.0" height="21.3"
+          rx="6" fill="url(#g-plate)"/>
+    <text class="lbl" x="222.7" y="491.3"
+          text-anchor="middle" font-size="14">3</text>
+  </g>
+<!-- llamadas numeradas: el numero es el uso HID que reporta el firmware -->
+<g id="badges">
+  <g class="badge">
+    <circle cx="243" cy="190" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="243" y="195" text-anchor="middle" font-size="14">01</text>
+  </g>
+  <g class="badge">
+    <circle cx="335" cy="190" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="335" y="195" text-anchor="middle" font-size="14">02</text>
+  </g>
+  <g class="badge">
+    <circle cx="280" cy="276" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="280" y="281" text-anchor="middle" font-size="14">03</text>
+  </g>
+  <line x1="93" y1="373" x2="112" y2="373" stroke="var(--mg-guide)" stroke-width="1.4"/>
+  <circle cx="112" cy="373" r="3.5" fill="var(--mg-guide)"/>
+  <g class="badge">
+    <circle cx="78" cy="373" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="78" y="378" text-anchor="middle" font-size="14">04</text>
+  </g>
+  <line x1="131" y1="303" x2="152" y2="303" stroke="var(--mg-guide)" stroke-width="1.4"/>
+  <circle cx="152" cy="303" r="3.5" fill="var(--mg-guide)"/>
+  <g class="badge">
+    <circle cx="116" cy="303" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="116" y="308" text-anchor="middle" font-size="14">05</text>
+  </g>
+  <line x1="85" y1="424" x2="100" y2="424" stroke="var(--mg-guide)" stroke-width="1.4"/>
+  <circle cx="100" cy="424" r="3.5" fill="var(--mg-guide)"/>
+  <g class="badge">
+    <circle cx="70" cy="424" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="70" y="429" text-anchor="middle" font-size="14">06</text>
+  </g>
+  <line x1="85" y1="488" x2="100" y2="488" stroke="var(--mg-guide)" stroke-width="1.4"/>
+  <circle cx="100" cy="488" r="3.5" fill="var(--mg-guide)"/>
+  <g class="badge">
+    <circle cx="70" cy="488" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="70" y="493" text-anchor="middle" font-size="14">07</text>
+  </g>
+  <line x1="151" y1="205" x2="170" y2="205" stroke="var(--mg-guide)" stroke-width="1.4"/>
+  <circle cx="170" cy="205" r="3.5" fill="var(--mg-guide)"/>
+  <g class="badge">
+    <circle cx="136" cy="205" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="136" y="210" text-anchor="middle" font-size="14">08</text>
+  </g>
+  <g class="badge">
+    <circle cx="262" cy="434" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="262" y="439" text-anchor="middle" font-size="14">09</text>
+  </g>
+  <g class="badge">
+    <circle cx="262" cy="462" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="262" y="467" text-anchor="middle" font-size="14">10</text>
+  </g>
+  <g class="badge">
+    <circle cx="262" cy="490" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
+    <text x="262" y="495" text-anchor="middle" font-size="14">11</text>
+  </g>
+</g>
+</g>
+</svg>

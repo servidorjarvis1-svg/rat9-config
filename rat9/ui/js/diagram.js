@@ -1,101 +1,136 @@
 /* ============================================================================
    diagram.js — el ratón como diagrama interactivo
    ----------------------------------------------------------------------------
-   El SVG se genera con tools/gen-mouse-svg.py y trae 11 zonas, cada una con el
-   uso HID REAL que reporta el firmware (`data-usage`, 1..11 segun
-   schema.RAT9_BUTTONS).
+   Se dibuja en DOS capas, generadas del MISMO fichero fuente
+   (tools/gen-mouse-svg.py), así que no pueden desincronizarse:
+
+     1. `diagram-mouse.svg`   el esquema, con su propia paleta. La capa con la
+        que se trabaja: geometría exacta y zonas clicables.
+     2. `diagram-overlay.svg` la misma geometría, pero ya TRANSFORMADA a la caja
+        donde ha caído el ratón dentro del render realista, y con paleta de
+        plano translúcido. Se apila encima de la imagen y encaja sola.
+
+   Pedirle al modelo de imagen que respetara nuestra geometría NO funcionó
+   (probado dos veces: la mueve). Medir dónde ha caído SU ratón y ajustar la
+   nuestra, sí. De ahí las dos capas en vez de una imagen sola.
+
+   Cada zona lleva el uso HID REAL que reporta el firmware (`data-usage`, 1..11
+   según schema.RAT9_BUTTONS).
 
    Tres cosas que hace y no son obvias:
-   - Se le quita el <style> interno al SVG. Los colores y los estados los pone
-     la hoja de la app, para que el ratón no sea un dibujo aparte con su propia
-     paleta. Ademas, en SVG los atributos de presentacion (fill="...") tienen
-     MENOS prioridad que una regla CSS, asi que la hoja puede repintarlo entero.
-   - La seleccion es unidireccional de verdad: pulsar una zona avisa a la vista
-     activa, y la vista puede pedir que se resalte una zona. Un solo estado.
-   - Accesible por teclado: cada zona es un boton con tabindex y aria-label, y
-     Enter/Espacio la activan. Escape quita la seleccion.
+   - Se le quita el <style> interno a cada SVG. La paleta la pone la app, para
+     que el ratón no sea un dibujo aparte. Además, en SVG los atributos de
+     presentación (fill="…") tienen MENOS prioridad que una regla CSS, así que
+     la hoja puede repintarlo entero.
+   - La selección es un único estado que se refleja en TODAS las capas a la vez.
+   - Accesible por teclado: cada zona es un botón con tabindex y aria-label, y
+     Enter/Espacio la activan. Escape quita la selección.
    ========================================================================= */
 
 const Diagram = (() => {
-  let svg = null;
-  let zonas = [];
+  /** id -> { id, uso, etiqueta, els: [un elemento por capa] } */
+  const zonas = new Map();
   let seleccion = null;
   const oyentes = new Set();
-
-  /** Carga el SVG y lo deja interactivo dentro de `contenedor`. */
-  async function cargar(contenedor) {
-    const r = await fetch('/ui/diagram-mouse.svg');
-    if (!r.ok) throw new Error('no he podido cargar el diagrama (HTTP ' + r.status + ')');
-
-    const doc = new DOMParser().parseFromString(await r.text(), 'image/svg+xml');
-    if (doc.querySelector('parsererror')) throw new Error('el SVG no es válido');
-    svg = doc.documentElement;
-
-    // sin tamano fijo: manda el CSS, y asi escala sin deformarse
-    svg.removeAttribute('width');
-    svg.removeAttribute('height');
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    // la paleta la pone la app, no el dibujo
-    svg.querySelector('style')?.remove();
-
-    zonas = [...svg.querySelectorAll('.z')].map((el) => ({
-      id: el.dataset.zone,
-      uso: Number(el.dataset.usage),
-      etiqueta: el.getAttribute('aria-label') || el.dataset.zone,
-      el,
-    }));
-
-    for (const z of zonas) {
-      z.el.setAttribute('tabindex', '0');
-      z.el.addEventListener('click', () => seleccionar(z.id));
-      z.el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          seleccionar(z.id);
-        }
-      });
-      z.el.addEventListener('focus', () => emitir('foco', z.id));
-    }
-
-    svg.addEventListener('keydown', (e) => { if (e.key === 'Escape') seleccionar(null); });
-
-    contenedor.replaceChildren(svg);
-    // Guarda contra el fallo mudo que ya nos comimos una vez: si el SVG acaba
-    // con tamano 0 (un choque de nombres de clase, una contencion, un
-    // porcentaje sin resolver) el raton simplemente NO APARECE y el navegador
-    // no dice nada. Mejor que se queje el.
-    requestAnimationFrame(() => {
-      const r = svg.getBoundingClientRect();
-      if (r.width < 8 || r.height < 8) {
-        console.error('el diagrama ha quedado en '
-          + `${Math.round(r.width)}x${Math.round(r.height)} px: no se vera. `
-          + 'Revisa el CSS del contenedor (tamano, contencion, clases repetidas).');
-      }
-    });
-    emitir('cargado', null);
-    return zonas;
-  }
-
-  function porId(id) { return zonas.find((z) => z.id === id) || null; }
-
-  /** Selecciona una zona (o la quita con null) y avisa a quien escuche. */
-  function seleccionar(id) {
-    if (id && !porId(id)) return;
-    seleccion = id;
-    for (const z of zonas) z.el.classList.toggle('sel', z.id === id);
-    svg?.classList.toggle('sel-mode', Boolean(id));
-    emitir('seleccion', id);
-  }
 
   function emitir(tipo, dato) {
     for (const fn of oyentes) fn(tipo, dato);
   }
 
+  async function traer(ruta) {
+    const r = await fetch(ruta);
+    if (!r.ok) throw new Error(`${ruta} (HTTP ${r.status})`);
+    const doc = new DOMParser().parseFromString(await r.text(), 'image/svg+xml');
+    if (doc.querySelector('parsererror')) throw new Error(`${ruta}: SVG inválido`);
+    const s = doc.documentElement;
+    // sin tamaño fijo: manda el CSS, y así escala sin deformarse
+    s.removeAttribute('width');
+    s.removeAttribute('height');
+    s.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    s.querySelector('style')?.remove();
+    return s;
+  }
+
+  /** Engancha las zonas de un SVG al registro común. */
+  function registrar(s) {
+    for (const el of s.querySelectorAll('.z')) {
+      const id = el.dataset.zone;
+      let z = zonas.get(id);
+      if (!z) {
+        z = { id, uso: Number(el.dataset.usage),
+              etiqueta: el.getAttribute('aria-label') || id, els: [] };
+        zonas.set(id, z);
+      }
+      z.els.push(el);
+      el.setAttribute('tabindex', '0');
+      el.addEventListener('click', () => seleccionar(id));
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          seleccionar(id);
+        }
+      });
+      el.addEventListener('focus', () => emitir('foco', id));
+    }
+    s.addEventListener('keydown', (e) => { if (e.key === 'Escape') seleccionar(null); });
+  }
+
+  /** Capa 1: el esquema. */
+  async function cargar(contenedor) {
+    const svg = await traer('/ui/diagram-mouse.svg');
+    registrar(svg);
+    contenedor.replaceChildren(svg);
+    comprobarTamano(svg);
+    emitir('cargado', null);
+    return lista();
+  }
+
+  /** Capa 2: el plano translúcido que va ENCIMA del render. */
+  async function cargarCapa(contenedor) {
+    const capa = await traer('/ui/diagram-overlay.svg');
+    registrar(capa);
+    contenedor.replaceChildren(capa);
+    // si ya había una zona seleccionada en el esquema, se refleja en la capa
+    if (seleccion) {
+      for (const el of zonas.get(seleccion)?.els || []) el.classList.add('sel');
+      capa.classList.add('sel-mode');
+    }
+    return lista();
+  }
+
+  /** Guarda contra el fallo mudo que ya nos comimos una vez: si el SVG acaba
+   *  con tamaño 0 (un choque de nombres de clase, una contención, un porcentaje
+   *  sin resolver) el ratón simplemente NO APARECE y el navegador no dice nada. */
+  function comprobarTamano(s) {
+    requestAnimationFrame(() => {
+      const r = s.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) {
+        console.error('el diagrama ha quedado en '
+          + `${Math.round(r.width)}x${Math.round(r.height)} px: no se verá. `
+          + 'Revisa el CSS del contenedor (tamaño, contención, clases repetidas).');
+      }
+    });
+  }
+
+  function lista() { return [...zonas.values()]; }
+  function porId(id) { return zonas.get(id) || null; }
+
+  /** Selecciona una zona (o la quita con null) en TODAS las capas. */
+  function seleccionar(id) {
+    if (id && !zonas.has(id)) return;
+    seleccion = id;
+    for (const [zid, z] of zonas) {
+      for (const el of z.els) el.classList.toggle('sel', zid === id);
+    }
+    for (const s of document.querySelectorAll('svg.mouse-diagram')) {
+      s.classList.toggle('sel-mode', Boolean(id));
+    }
+    emitir('seleccion', id);
+  }
+
   return {
-    cargar,
-    seleccionar,
-    porId,
-    get zonas() { return zonas; },
+    cargar, cargarCapa, seleccionar, porId,
+    get zonas() { return lista(); },
     get seleccion() { return seleccion; },
     /** Suscribe a 'cargado' | 'seleccion' | 'foco'. */
     on(fn) { oyentes.add(fn); return () => oyentes.delete(fn); },

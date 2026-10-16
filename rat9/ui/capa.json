@@ -1,0 +1,27 @@
+{
+  "imagen": "rat9/ui/assets/raton-original.png",
+  "viewbox": [
+    700,
+    1090
+  ],
+  "bbox_imagen": [
+    10,
+    124,
+    685,
+    954
+  ],
+  "bbox_esquema": [
+    44.0,
+    28.0,
+    362.0,
+    556.0
+  ],
+  "scale": [
+    1.89227,
+    1.71583
+  ],
+  "translate": [
+    -73.26,
+    75.96
+  ]
+}

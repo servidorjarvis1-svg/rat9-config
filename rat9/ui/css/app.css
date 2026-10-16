@@ -312,18 +312,8 @@ body {
 .device-figure img {
   inline-size: 100%; block-size: auto;
   max-inline-size: 100%;
-  max-block-size: 60vh;         /* el mismo tope que el esquema: el banco no salta */
+  max-block-size: 50vh;         /* el mismo tope que el esquema: el banco no salta */
   object-fit: contain;
-  /* La imagen trae su propio fondo oscuro: se funde con el lienzo con una
-     mascara radial para que no se vea el borde del rectangulo.
-     El recorte deja aire a proposito (el raton ocupa del 19% al 81% en anchura
-     y del 14% al 86% en altura): asi la mascara se come SOLO el margen. Con el
-     recorte al ras, cualquier desvanecido se comia el talon del raton.
-     OJO: aqui NO va drop-shadow. Sobre una <img> la sombra sigue el RECTANGULO
-     del elemento, no la silueta del raton, y se ve un halo cuadrado. La
-     profundidad la da el propio sombreado del render. */
-  -webkit-mask-image: radial-gradient(58% 60% at 50% 50%, #000 76%, transparent 100%);
-  mask-image: radial-gradient(58% 60% at 50% 50%, #000 76%, transparent 100%);
 }
 .device-figure figcaption {
   max-inline-size: 48ch; text-align: center;
@@ -603,13 +593,13 @@ body {
    el bloque <style> y estos --mg-* mandan. Asi el ratón pertenece a la misma
    paleta que el resto y se puede recalibrar desde aquí. */
 
+/* El dibujo tiene su PROPIA escala de valores, y es mas clara que el cromo de
+   la interfaz. Antes derivaba todo de --bg-3 (L 0,26) con unos puntos de
+   blanco: un rango tonal de L 0,21 a 0,30, donde no cabe ningun volumen. Un
+   objeto iluminado necesita sombra Y luz: aqui va de 0,10 (ranuras) a 0,53
+   (caras iluminadas).
+   Es el cambio que de verdad hace que se lea como objeto y no como silueta. */
 .device-frame {
-  /* El dibujo tiene su PROPIA escala de valores, y es mas clara que el cromo de
-     la interfaz. Antes derivaba todo de --bg-3 (L 0,26) con unos puntos de
-     blanco: un rango tonal de L 0,21 a 0,30, donde no cabe ningun volumen. Un
-     objeto iluminado necesita sombra Y luz: aqui va de 0,10 (ranuras) a 0,53
-     (caras iluminadas).
-     Es el cambio que de verdad hace que se lea como objeto y no como silueta. */
   --mg-recess:     oklch(0.100 0.012 255);   /* ranuras, huecos */
   --mg-gap:        oklch(0.062 0.010 258);   /* junta entre piezas */
   --mg-shell:      oklch(0.300 0.022 252);   /* cuerpo */
@@ -628,6 +618,56 @@ body {
   --mg-badge-edge: oklch(0.620 0.055 245);
   --mg-luz:        oklch(1 0 0);
 }
+
+/* ── la capa que va ENCIMA del render ──────────────────────────────────────
+   Aquí el dibujo no rellena: solo perfila. Es un plano superpuesto a una
+   fotografía; si tapara la imagen, competirían las dos. Los rellenos son
+   lavados de acento a baja opacidad y mandan las líneas. */
+.capa-render {
+  /* Va ENCIMA de una fotografía: si el plano es tenue se lee como un artefacto
+     del render y no como un plano, así que aquí las líneas son lo que MANDA.
+     En el cuerpo del SVG el contorno de las piezas es el color del hueco
+     (--mg-gap, oscuro); aquí se invierte a claro, porque sobre la foto lo que
+     tiene que verse son las líneas, no los huecos. */
+  --mg-shell:      oklch(0.72 0.150 245 / .14);
+  --mg-shell-hi:   oklch(0.84 0.140 245 / .22);
+  --mg-plate:      oklch(0.72 0.150 245 / .18);
+  --mg-plate-hi:   oklch(0.86 0.140 245 / .26);
+  --mg-palm:       oklch(0.72 0.150 245 / .10);
+  --mg-recess:     oklch(0.08 0.012 255 / .45);
+  --mg-control:    oklch(0.78 0.140 245 / .20);
+  --mg-control-hi: oklch(0.90 0.130 245 / .34);
+  --mg-seam:       oklch(0.88 0.110 245 / .70);
+  --mg-ridge:      oklch(0.94 0.100 245 / .75);
+  --mg-edge:       oklch(0.94 0.090 240 / .96);
+  --mg-gap:        oklch(0.88 0.110 242 / .95);
+  --mg-ink:        oklch(0.97 0.030 245);
+  --mg-guide:      oklch(0.82 0.120 245 / .9);
+  --mg-badge-bg:   oklch(0.15 0.035 250 / .92);
+  --mg-badge-edge: oklch(0.88 0.120 245 / .95);
+  /* la banda de luz y el reflejo de la rueda se apagan: sobre la foto ya hay
+     iluminación de verdad y añadir la nuestra la ensuciaría */
+  --mg-luz:        transparent;
+  /* NADA de rellenos oscuros: tapaban el producto. La capa solo perfila. */
+  --mg-recess:     transparent;
+  --mg-palm:       oklch(0.72 0.150 245 / .06);
+  --mg-shell:      oklch(0.72 0.150 245 / .07);
+}
+
+/* Las dos capas apiladas. Encajan solas porque las dos miden 720x931: el SVG
+   trae la geometría YA transformada a la caja donde ha caído el ratón en la
+   imagen (lo hace tools/gen-mouse-svg.py, midiendo el render). Así no hay
+   cuentas de alineación en CSS, que es donde se desincronizarían. */
+.device-stack { position: relative; inline-size: 100%; line-height: 0; }
+.device-stack img { display: block; inline-size: 100%; block-size: auto; }
+.device-stack .capa {
+  position: absolute; inset: 0;
+  inline-size: 100%; block-size: 100%;
+}
+.device-stack .capa svg { inline-size: 100%; block-size: 100%; }
+/* El plano lleva las líneas algo más gruesas que el esquema suelto: encima de
+   una foto, 1,5 px se pierden entre el grano y las sombras de la imagen. */
+.device-stack .capa :is(path, rect)[stroke] { stroke-width: 2.2; }
 
 /* El SVG se mide contra el ancho del contenedor, que ya viene acotado por el
    banco (760 px). Antes usaba 68cqi, que se apunta al PROPIO contenedor: con

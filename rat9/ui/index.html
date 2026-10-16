@@ -93,17 +93,25 @@
         <p class="hint" id="deviceMsg">cargando diagrama…</p>
       </div>
 
-      <!-- Retrato realista del dispositivo. Va APARTE del esquema y sin marcas
-           encima: el render es una ilustracion generada, no una foto de esta
-           unidad, y sus piezas no caen donde las del raton real. Poner las
-           llamadas encima seria senalar la pieza equivocada. -->
+      <!-- Retrato del dispositivo. Tres vistas: el esquema (geometría exacta y
+           zonas clicables), el render del producto original, y las dos capas
+           superpuestas.
+           OJO con la tercera: el plano va ajustado a la CAJA del render, no a
+           su forma. Son siluetas distintas (el render mide 0,72 de proporción y
+           el esquema 0,65, y el original tiene algo de perspectiva), así que no
+           coinciden al milímetro por mucho que se ajuste la caja. -->
       <figure class="device-figure hidden" id="deviceFigure">
-        <img src="assets/raton-render.png" width="720" height="931"
-             alt="Ilustración realista del Mad Catz R.A.T.9 visto desde arriba">
+        <!-- DOS CAPAS del mismo dibujo: la imagen realista debajo y el plano
+             translúcido encima. Miden lo mismo y el SVG viene ya transformado
+             a la caja del ratón de la imagen, así que encajan solas. -->
+        <div class="device-stack">
+          <img src="assets/raton-original.png" width="700" height="1090"
+               alt="Render cenital del Mad Catz R.A.T.9, del software original">
+          <div class="capa hidden" id="deviceCapa"></div>
+        </div>
         <figcaption>
-          Ilustración del dispositivo, generada. No es una foto de tu unidad ni
-          sus piezas están a escala: para programar botones usa el
-          <b>esquema</b>, que sí lleva la geometría real.
+          Render cenital del <b>software original de Mad Catz</b>. Para la
+          geometría exacta y las zonas clicables, usa la vista <b>Esquema</b>.
         </figcaption>
       </figure>
 
@@ -120,8 +128,11 @@
         <button class="btn btn--quiet" data-figura="esquema" aria-pressed="true">
           Esquema
         </button>
-        <button class="btn btn--quiet" data-figura="render" aria-pressed="false">
-          Ilustración
+        <button class="btn btn--quiet" data-figura="original" aria-pressed="false">
+          Producto
+        </button>
+        <button class="btn btn--quiet" data-figura="superpuesto" aria-pressed="false">
+          Las dos capas
         </button>
       </div>
 

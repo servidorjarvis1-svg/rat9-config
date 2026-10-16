@@ -21,18 +21,20 @@ const App = (() => {
 
   const $ = (s) => document.querySelector(s);
 
-  /* ── figura del banco: esquema interactivo o ilustración ─────────────── */
+  /* ── figura del banco: esquema, producto o las dos capas ─────────────── */
 
   let figura = 'esquema';
 
   function pintarFigura() {
-    const esRender = figura === 'render';
-    $('#deviceFrame').classList.toggle('hidden', esRender);
-    $('#deviceFigure').classList.toggle('hidden', !esRender);
+    const esEsquema = figura === 'esquema';
+    const conCapa = figura === 'superpuesto';
+    $('#deviceFrame').classList.toggle('hidden', !esEsquema);
+    $('#deviceFigure').classList.toggle('hidden', esEsquema);
+    $('#deviceCapa').classList.toggle('hidden', !conCapa);
     // La leyenda numerada es del ESQUEMA: los números señalan zonas del dibujo,
-    // y en la ilustración no hay zonas. Enseñarla ahí sería un número sin nada
-    // a lo que apuntar.
-    $('#numb').classList.toggle('hidden', esRender);
+    // y sobre la imagen no hay zonas. Enseñarla ahí sería un número sin nada a
+    // lo que apuntar.
+    $('#numb').classList.toggle('hidden', !esEsquema);
     for (const b of document.querySelectorAll('[data-figura]')) {
       b.setAttribute('aria-pressed', String(b.dataset.figura === figura));
     }
@@ -106,10 +108,10 @@ const App = (() => {
   function ir(nueva) {
     if (!RENDER[nueva]) return;
     vista = nueva;
-    // La figura se elige segun para que estas: la ilustracion para MIRAR el
+    // La figura se elige segun para que estas: el producto para MIRAR el
     // dispositivo, el esquema (con sus zonas clicables) para TRABAJAR en el.
     // El boton del banco lo puede cambiar; esto es solo el valor por defecto.
-    figura = nueva === 'panel' ? 'render' : 'esquema';
+    figura = nueva === 'panel' ? 'original' : 'esquema';
     for (const b of document.querySelectorAll('.rail-item')) {
       const activa = b.dataset.view === nueva;
       if (activa) b.setAttribute('aria-current', 'page');
@@ -185,6 +187,13 @@ const App = (() => {
       const zonas = await Diagram.cargar($('#deviceFrame'));
       $('#deviceMsg')?.remove();
       pintarLeyenda(zonas);
+      // la capa que va encima de la ilustración. Es un extra: si falla, el
+      // esquema sigue en pie y la app no se queda sin diagrama.
+      try {
+        await Diagram.cargarCapa($('#deviceCapa'));
+      } catch (e) {
+        console.warn('sin capa para la ilustración:', e.message);
+      }
       console.info('diagrama cargado:', zonas.length, 'zonas');
     } catch (e) {
       $('#deviceFrame').innerHTML =
@@ -195,8 +204,8 @@ const App = (() => {
 
     await refrescar();
     pintarVista();
-    // Arrancamos en el Panel: su figura por defecto es la ilustración
-    figura = vista === 'panel' ? 'render' : 'esquema';
+    // Arrancamos en el Panel: su figura por defecto es el render del producto
+    figura = vista === 'panel' ? 'original' : 'esquema';
     pintarFigura();
 
     temporizador = setInterval(refrescar, REFRESCO_MS);
