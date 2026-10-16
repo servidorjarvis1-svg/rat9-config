@@ -81,4 +81,59 @@ Veredicto honesto por técnica:
 ## Artefactos de esta sesión
 - Informe: este fichero (`docs/research/informe-3d.md`).
 - Parche: `~/3d-tools/stable-fast-3d/run.py` (rembg fijado a CPUExecutionProvider — onnxruntime CUDA roto en ese venv).
-- Experimentos y datos: `~/.hermes/cache/scratch/rat9/` (visual_hull.py, render_glb_trimesh.py, cutouts/, hull/rat9_hull.glb, masks/, params.json, renders/, sheets de contacto). Nada más tocado en rat9-config.
+- Experimentos y datos: `~/3d-tools/` + `~/rat9-config/3d/` (visual_hull.py, render_glb_trimesh.py, cutouts/, hull/, masks/, params.json, renders/, sheets de contacto). Nada más tocado en rat9-config.
+
+---
+
+## ADDENDA (medido después del informe — CORRIGE dos conclusiones de arriba)
+
+El paso 1 de la sección 4 se ejecutó tal cual se recomendaba, y el resultado obliga a
+corregir dos cosas de este informe. Se deja escrito aquí para que no se repita el
+trabajo creyendo que faltaba probarlo.
+
+### Lo que se hizo
+- Pipeline reescrito como herramienta del repo: `tools/visual-hull.py` (carve + IoU +
+  marching cubes + suavizado Taubin), con la limpieza del apéndice del paso 1.
+- **Fidelidad comprobada**: a N=112 y SIN limpiar da **IoU 0,708**, el mismo número que
+  reportaba este informe. La implementación reproduce la del informe; el resultado
+  negativo no es un error de implementación.
+- N=160 con limpieza: **IoU 0,793**, 211.284 caras, 104.936 vértices.
+
+### Corrección 1 — la hipótesis del apéndice superior es FALSA
+Decir que "contamina TODAS las siluetas" y que hay que "separarlo" para que no haya
+spike era una suposición, no una medida. Medido: recortar las filas cuya anchura no
+llega al 30% de la máxima quita **el 0,6% de los píxeles de silueta** (1.752.972 →
+1.742.331). Es decir, **rembg ya se lo había comido**. No es la causa del pincho ni
+del mal hull. El spike que se ve en las vistas es un artefacto del carve, no un
+apéndice que quedara en las máscaras.
+
+### Corrección 2 — la malla NO se lee como un ratón, y subir N no lo arregla
+El informe decía "~6/10 como bloqueo, se lee como ratón (L:H 2,1–2,3:1)". Una lectura
+fría de las cuatro vistas ortográficas del GLB a N=160 dice otra cosa: grietas,
+rebabas, depresiones y artefactos; **solo en uno de los cuatro perfiles se intuye
+algo**. Las proporciones medidas del volumen (0,45 : 0,89 : 1,06 en el espacio del
+grid) no corresponden a un ratón bajo y alargado.
+
+Y **no es cuestión de resolución de vóxel**: al pasar de 112³ a 160³ el IoU sube de
+0,708 a 0,793 y la malla de 96k a 211k caras, y la forma sigue sin reconocerse. Es
+**falta de información**, no de cómputo.
+
+### Por qué falla, en una frase
+Las 48 vistas están **todas en una sola banda de elevación (~10°)**. Un visual hull
+construido con vistas de una sola latitud es un desbaste pobre **por construcción**:
+el volumen que sobrevive a las 48 siluetas no es el objeto, es la intersección de 48
+"prismas" oblicuos, y esa intersección rellena y deforma. Ninguna resolución de grid
+arregla eso, y ninguna técnica por siluetas tampoco.
+
+### Qué queda vivo
+1. **Fotos reales del R.A.T.9 físico**: móvil, mesa giratoria, 2–3 alturas de cámara
+   (no una), luz difusa, fondo contrastado. Valdría más que todo el material del
+   instalador junto y habilitaría COLMAP/Meshroom de verdad.
+2. **Sacar la malla original del instalador**: el software renderiza un modelo 3D al
+   vuelo, así que la geometría está dentro. La pista sin agotar siguen siendo los
+   **61 PNG de 550x550 sin identificar**.
+
+### Dónde vive ahora el trabajo
+`3d/` en el repo (scripts, las 48 máscaras, malla y parámetros; los binarios van en
+`.gitignore`), porque `~/.hermes/cache/scratch/` **se poda a las 24 h** y se habría
+perdido. La herramienta reproducible es `tools/visual-hull.py`.
