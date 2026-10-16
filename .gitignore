@@ -12,3 +12,19 @@ docs/hardware-ref/*.webp
 
 # Renders de verificacion del diagrama (se regeneran con tools/svg-render.py)
 docs/research/shots/
+
+# ── Material de terceros: NO se publica ──────────────────────────────────────
+# Los 1832 PNG extraidos del instalador original de Mad Catz, las capturas de la
+# competencia y las de hardware son material con derechos de otros. El proyecto
+# publica el CODIGO y el esquema de protocolo (con atribucion, ver PROVENANCE.md),
+# no los recursos graficos ajenos. Se regeneran/extrayen en local (docs/ENTORNO.md).
+docs/original-ui/extracted-from-installer/
+docs/competitors/
+docs/hardware-ref/
+
+# Fotogramas del visor de rotacion: son del mismo material del instalador.
+rat9/ui/assets/giro/
+
+# Derivados pesados del 3D (se regeneran con tools/visual-hull*.py)
+3d/hull/
+3d/masks/
