@@ -1,0 +1,18 @@
+# Permitir configurar el Mad Catz R.A.T.9 (0738:1709) sin root.
+#
+# Hacen falta tres nodos:
+#   /dev/bus/usb/BBB/DDD  -> control transfers (leer bateria, DPI, perfil)
+#   /dev/hidrawN          -> SET_REPORT (escribir)
+#   /dev/input/eventN     -> lectura de botones
+#
+# OJO CON LAS COINCIDENCIAS (aqui estaba el fallo de la version anterior):
+#   - Para el nodo USB el dispositivo udev es el "usb_device", cuyo KERNEL es
+#     la ruta bus-puerto ("1-1"), NUNCA "usb". Hay que filtrar por SUBSYSTEM.
+#   - Para hidraw el KERNEL lleva sufijo numerico ("hidraw4"), asi que
+#     KERNEL=="hidraw" no coincide nunca: hay que usar hidraw*.
+#   - idVendor/idProduct son atributos del propio usb_device (ATTR), pero en
+#     hidraw/input son del padre USB (ATTRS).
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="0738", ATTR{idProduct}=="1709", MODE="0660", GROUP="rat9"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0738", ATTRS{idProduct}=="1709", MODE="0660", GROUP="rat9"
+SUBSYSTEM=="input", ATTRS{idVendor}=="0738", ATTRS{idProduct}=="1709", MODE="0660", GROUP="rat9"

@@ -24,8 +24,14 @@ inversa del software oficial de Windows (Mad Catz Software 7.0.45.2).
 |---|---|
 | `0x0074` | perfil/modo activo (`byte0 >> 4`) |
 | `0x00BA` | batería (el firmware puede dar valores corruptos: validar 0–100) |
+| `0x000B` | `0x0001` — **sin identificar**. Solo responde a longitud 2, y falla si se le ponen los bits de modo/eje. |
 
-Ningún otro índice responde en todo el rango `0x00`–`0xFF`.
+Ningún otro índice responde en todo el rango `0x00`–`0xFF` (verificado con `cli.py scan`).
+
+La batería es fiable de verdad, pero el firmware suelta basura de forma
+intermitente: ocho lecturas seguidas dan 96 % y una aislada puede dar un valor
+inválido. `battery()` ya descarta lo que se sale de 0–100, así que la interfaz
+nunca debe mostrar un número crudo.
 
 **Escritura** — HID `SET_REPORT`: `bmRequestType 0x21`, `bRequest 0x09`,
 `wValue 0x0300` (report ID 0). Acepta payloads de 8 a 64 bytes.
@@ -48,21 +54,30 @@ con bases `0x73` (DPI), `0x74` (perfil activo), `0xBA` (batería).
 
 ## Uso
 
+**No hace falta root.** Las reglas udev (`99-rat9.rules`, en este repo) dan los
+nodos USB, hidraw y de entrada del ratón al grupo `rat9`. Para instalarlas:
+
+```bash
+sudo install -m 644 99-rat9.rules /etc/udev/rules.d/99-rat9.rules
+sudo udevadm control --reload && sudo udevadm trigger
+```
+
 ```bash
 # solo lectura (seguro)
-sudo python3 -m rat9.cli status
-sudo python3 -m rat9.cli scan
+python3 -m rat9.cli status
+python3 -m rat9.cli scan
+python3 -m rat9.cli dpi --mode 1
 
 # empaquetar sin escribir
 python3 -m rat9.cli frames --xml '[profile …]'
 
-# ESCRIBIR en el ratón
-sudo python3 -m rat9.cli send --file perfiles/mi-perfil.pr0
+# ESCRIBIR en el ratón (todavía sin verificar)
+python3 -m rat9.cli send --file perfiles/mi-perfil.pr0
 ```
 
 Editor de macros:
 ```bash
-sudo python3 -m rat9.server 8766
+python3 -m rat9.server 8766
 # → http://127.0.0.1:8766/editor/editor.html
 ```
 Permite crear macros (teclas, botones, rueda, multimedia), organizarlas en bloques
@@ -73,6 +88,35 @@ Permite crear macros (teclas, botones, rueda, multimedia), organizarlas en bloqu
 ```bash
 sudo pacman -S python-libusb1        # API usb1, NO pyusb
 ```
+
+Para la app de escritorio (ventana nativa con la interfaz dentro):
+
+```bash
+sudo pacman -S gtk4 libadwaita webkitgtk-6.0
+```
+
+## Acceso al ratón sin root
+
+`99-rat9.rules` da los tres nodos del ratón al grupo `rat9`:
+
+```
+SUBSYSTEM=="usb",    ATTR{idVendor}=="0738", ATTR{idProduct}=="1709", MODE="0660", GROUP="rat9"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0738", ATTRS{idProduct}=="1709", MODE="0660", GROUP="rat9"
+SUBSYSTEM=="input",  ATTRS{idVendor}=="0738", ATTRS{idProduct}=="1709", MODE="0660", GROUP="rat9"
+```
+
+Dos trampas que costaron una sesión de depuración, y que hay que respetar si se
+reescriben:
+
+- El nodo `/dev/bus/usb/BBB/DDD` lo crea el dispositivo udev `usb_device`, cuyo
+  `KERNEL` es la ruta bus-puerto (`1-1`), **nunca** `"usb"`. Una regla con
+  `KERNEL=="usb"` no coincide jamás: hay que filtrar por `SUBSYSTEM`.
+- En hidraw el `KERNEL` lleva sufijo numérico (`hidraw4`), así que
+  `KERNEL=="hidraw"` tampoco coincide: va `hidraw*`.
+
+Y la distinción `ATTR` (atributo del propio dispositivo USB) frente a `ATTRS`
+(recorre hacia el padre): en el nodo USB van los `idVendor`/`idProduct` del
+dispositivo, pero en hidraw e input son del padre USB.
 
 ## Lo que NO funciona (documentado para no perder tiempo)
 
