@@ -18,9 +18,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "rat9" / "ui" / "capa.json"
 
-# Caja del ratón dentro del viewBox del ESQUEMA. Sale de los parámetros de
-# tools/gen-mouse-svg.py: la silueta va de x 44 a 406 y de y 28 a 584.
-BBOX_ESQUEMA = (44.0, 28.0, 362.0, 556.0)
+# Caja que ocupa el DIBUJO, no la del viewBox. El cuerpo se genera sobre la
+# tabla PROFILE, que va de y=60 (morro) a y=700 (talón), y en anchura de x=44 (la
+# punta de la aleta) a x=406. Poner aquí la del viewBox (28..584) metía un 13% de
+# compresión vertical en la capa y el contorno caía por debajo de los botones.
+BBOX_ESQUEMA = (44.0, 60.0, 362.0, 640.0)
 
 
 def medir(img: Path, fuzz: float) -> tuple[int, int, int, int]:

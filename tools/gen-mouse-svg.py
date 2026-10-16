@@ -70,12 +70,57 @@ def lerp_profile(table, y, clamp=True):
     return table[-1][1]
 
 
+# ─── contorno MEDIDO sobre el render (opcional) ──────────────────────────────
+# Si existe rat9/ui/silueta.json (lo escribe tools/trazar-silueta.py midiendo el
+# render), el dibujo se traza SOBRE ESA SILUETA en vez de usar el perfil
+# inventado de aqui abajo. Es lo que hace que las dos capas coincidan: no se
+# ajusta el dibujo a la imagen a ojo, se mide la imagen y el dibujo sale de ella.
+#
+# El contorno viene normalizado a la caja del raton (0..1 en cada eje), y aqui se
+# proyecta sobre la caja del viewBox del esquema.
+SIL_X0, SIL_Y0, SIL_W, SIL_H = 44.0, 60.0, 362.0, 640.0
+_CONTORNO: dict | None = None
+_EJE = 280.0            # eje del cuerpo (CX); con contorno medido se recalcula
+
+
+def _eje_medido(cont: dict) -> float:
+    """Eje del cuerpo medido en la parte DELANTERA, donde aun no hay aleta.
+
+    No vale tomar el centro de la caja: la aleta desplaza ese centro hacia la
+    izquierda y el eje saldria torcido. En el morro todavia no hay aleta, asi que
+    ahi el punto medio izquierda-derecha ES el eje.
+    """
+    delanteras = [(l + r) / 2 for (v, l), (_, r)
+                  in zip(cont["left"], cont["right"]) if v < 0.30]
+    if not delanteras:
+        return CX
+    return SIL_X0 + (sum(delanteras) / len(delanteras)) * SIL_W
+
+
+def _interp(tabla, v: float) -> float:
+    if v <= tabla[0][0]:
+        return tabla[0][1]
+    if v >= tabla[-1][0]:
+        return tabla[-1][1]
+    for (v0, x0), (v1, x1) in zip(tabla, tabla[1:]):
+        if v0 <= v <= v1:
+            return x0 + (x1 - x0) * (v - v0) / (v1 - v0)
+    return tabla[-1][1]
+
+
+def _v(y: float) -> float:
+    """Altura normalizada (0 = morro, 1 = talon)."""
+    return (y - Y_NOSE) / (Y_HEEL - Y_NOSE)
+
+
 def body_half(y: float) -> float:
     return lerp_profile(PROFILE, y)
 
 
 def left_edge(y: float) -> float:
-    """Borde izquierdo real: el cuerpo, o la aleta si sobresale."""
+    """Borde izquierdo: la aleta si sobresale, o el cuerpo."""
+    if _CONTORNO is not None:
+        return SIL_X0 + _interp(_CONTORNO["left"], _v(y)) * SIL_W
     body = CX - body_half(y)
     if WING[0][0] <= y <= WING[-1][0]:
         return min(body, lerp_profile(WING, y))
@@ -83,11 +128,17 @@ def left_edge(y: float) -> float:
 
 
 def right_edge(y: float) -> float:
+    if _CONTORNO is not None:
+        return SIL_X0 + _interp(_CONTORNO["right"], _v(y)) * SIL_W
     return CX + body_half(y)
 
 
 def flank_inner(y: float) -> float:
     """Borde interior del panel lateral."""
+    if _CONTORNO is not None:
+        # una fraccion del ancho local: asi el panel sigue la forma medida en
+        # vez de arrastrar las anchuras fijas del perfil inventado
+        return left_edge(y) + 0.20 * (right_edge(y) - left_edge(y))
     return left_edge(y) + lerp_profile(FLANK_W, y)
 
 
@@ -313,7 +364,9 @@ def cargar_encaje(here: Path) -> dict:
     return {
         "viewbox": [720, 931],
         "bbox_imagen": [134.0, 135.0, 452.0, 658.0],
-        "bbox_esquema": [44.0, 28.0, 362.0, 556.0],
+        # ojo: la caja es la que el DIBUJO ocupa de verdad, no la del viewBox.
+        # El cuerpo se genera sobre el perfil PROFILE, que va de y=60 a y=700.
+        "bbox_esquema": [44.0, 60.0, 362.0, 640.0],
     }
 
 
@@ -345,6 +398,9 @@ def envolver_para_imagen(svg: str, encaje: dict) -> str:
 
 def build_svg() -> str:
     # ── silueta ──────────────────────────────────────────────────────────────
+    # Si hay contorno medido sobre la imagen, manda el. Si no, se usa el perfil
+    # de aqui arriba, que es el que habia antes de poder medir.
+    eje = _EJE
     ys_right = [p[0] for p in PROFILE]
     right_pts = [(right_edge(y), y) for y in ys_right]
     left_pts = [(left_edge(y), y) for y in reversed(ys_right)]
@@ -364,8 +420,8 @@ def build_svg() -> str:
             + [PLATE_Y1]
         outer = ([(flank_inner(y) + 2.5, y) for y in ys] if side == "l"
                  else [(right_edge(y) - 3.5, y) for y in ys])
-        inner = [(CX - 3, y) for y in reversed(ys)] if side == "l" else \
-                [(CX + 3, y) for y in reversed(ys)]
+        inner = [(eje - 3, y) for y in reversed(ys)] if side == "l" else \
+                [(eje + 3, y) for y in reversed(ys)]
         return band_shape(outer, inner)
 
     def filo_placa(side: str) -> str:
@@ -387,7 +443,7 @@ def build_svg() -> str:
         [(flank_inner(y), y) for y in reversed(flank_ys)])
 
     # ── rueda central ────────────────────────────────────────────────────────
-    wx0, wx1 = CX - WHEEL_X_HALF, CX + WHEEL_X_HALF
+    wx0, wx1 = eje - WHEEL_X_HALF, eje + WHEEL_X_HALF
     channel = (f"M {wx0 - 8:.0f} {WHEEL_Y0 - 10:.0f} L {wx1 + 8:.0f} "
                f"{WHEEL_Y0 - 10:.0f} Q {wx1 + 12:.0f} {WHEEL_Y0 - 10:.0f} "
                f"{wx1 + 12:.0f} {WHEEL_Y0 - 4:.0f} L {wx1 + 12:.0f} "
@@ -451,7 +507,7 @@ def build_svg() -> str:
     scale_line = (f'  <line x1="{sx0:.1f}" y1="{scale_y:.1f}" '
                   f'x2="{sx1:.1f}" y2="{scale_y:.1f}"/>')
     channel_lip = (f"M {wx0 - 15:.0f} {WHEEL_Y0 - 8:.0f} "
-                   f"Q {CX:.0f} {WHEEL_Y0 - 17:.0f} {wx1 + 15:.0f} "
+                   f"Q {eje:.0f} {WHEEL_Y0 - 17:.0f} {wx1 + 15:.0f} "
                    f"{WHEEL_Y0 - 8:.0f}")
     wheel_ridges = "\n".join(
         f'    <line x1="{wx0 + 14:.0f}" y1="{y:.1f}" x2="{wx1 - 4:.0f}" '
@@ -541,7 +597,7 @@ def build_svg() -> str:
 
 <!-- costuras funcionales: separacion de botones y de reposamanos -->
 <g stroke="#2b3543" stroke-width="1">
-  <line x1="{CX:.0f}" y1="{PLATE_Y0 + 5:.0f}" x2="{CX:.0f}"
+  <line x1="{eje:.0f}" y1="{PLATE_Y0 + 5:.0f}" x2="{eje:.0f}"
         y2="{PLATE_Y1 - 8:.0f}"/>
   <line x1="{flank_inner(PALM_Y0) + 3:.0f}" y1="{PALM_Y0:.0f}"
         x2="{right_edge(PALM_Y0) - 3:.0f}" y2="{PALM_Y0:.0f}"/>
@@ -606,6 +662,18 @@ def main() -> int:
     a = ap.parse_args()
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+
+    # El contorno medido sobre la imagen, si existe, manda sobre el perfil
+    # inventado: es lo que hace que el dibujo y la imagen encajen.
+    global _CONTORNO, _EJE
+    ruta_sil = here / "rat9/ui/silueta.json"
+    if ruta_sil.is_file():
+        cont = json.loads(ruta_sil.read_text())
+        _CONTORNO = cont
+        _EJE = _eje_medido(cont)
+        print(f"contorno medido de {cont['origen']} ({cont['medido']}): "
+              f"eje del cuerpo x = {_EJE:.0f}")
+
     svg = tokenizar_cuerpo(build_svg())
     out.write_text(svg)
     zones = svg.count('class="z"')

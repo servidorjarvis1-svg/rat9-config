@@ -40,7 +40,7 @@ SY = BBOX_IMAGEN[3] / BBOX_ESQUEMA[3]
 TX = BBOX_IMAGEN[0] - SX * BBOX_ESQUEMA[0]
 TY = BBOX_IMAGEN[1] - SY * BBOX_ESQUEMA[1]
 
-N_FILAS = 17          # filas de la tabla de contorno
+N_FILAS = 23          # filas de la tabla de contorno
 MARGEN = 0.06         # fraccion de cada lado que se toma como fondo
 UMBRAL = 0.055        # diferencia minima (0..1) para considerar "raton"
 MIN_RUN = 6           # ancho minimo de una fila para no contar ruido
@@ -60,28 +60,59 @@ def mascara(arr: np.ndarray, umbral: float = UMBRAL) -> np.ndarray:
     return m
 
 
-def contornos(m: np.ndarray, fraccion_min: float = 0.30) -> dict[int, tuple[int, int]]:
-    """Para cada fila, el primer y el ultimo pixel de raton.
+def contornos(m: np.ndarray, min_corrida: int = 10) -> dict[int, tuple[int, int]]:
+    """Borde EXTERIOR del raton en cada fila: el primer y el ultimo pixel.
 
-    Se descartan las filas demasiado estrechas: debajo del raton queda su sombra
-    proyectada, que tambien se aparta del fondo, y sin filtrarla la silueta
-    medida se alargaba hasta el borde de la imagen.
+    Deliberadamente NO se busca "la mancha mas grande" ni se rellenan huecos.
+    El raton es oscuro sobre fondo oscuro y sus propias bandas internas se
+    confunden con el fondo, asi que la mascara sale agujereada. Pero para trazar
+    el contorno eso da igual: lo unico que hace falta es donde EMPIEZA y donde
+    ACABA el objeto en cada fila, y eso se mide entrando desde fuera hacia
+    dentro, que es inmune a los agujeros de dentro.
+
+    `min_corrida` alto a proposito: junto al flanco izquierdo hay una sombra
+    suelta y, con corridas cortas, el contorno saltaba a ella y el raton salia
+    mas ancho de lo que es en esa zona.
     """
-    crudos = {}
-    for y in range(m.shape[0]):
-        idx = np.flatnonzero(m[y])
-        if idx.size < MIN_RUN:
+    salida = {}
+    alto, ancho = m.shape
+    for y in range(alto):
+        fila = m[y]
+        izq = der = None
+        for x in range(0, ancho - min_corrida):
+            if fila[x:x + min_corrida].all():
+                izq = x
+                break
+        if izq is None:
             continue
-        # el run mas largo de la fila: el raton, no un reflejo suelto
-        cortes = np.split(idx, np.flatnonzero(np.diff(idx) > 3) + 1)
-        mejor = max(cortes, key=len)
-        if len(mejor) >= MIN_RUN:
-            crudos[y] = (int(mejor[0]), int(mejor[-1]))
-    if not crudos:
-        return {}
-    ancho_max = max(b - a for a, b in crudos.values())
-    umbral_ancho = ancho_max * fraccion_min
-    return {y: v for y, v in crudos.items() if (v[1] - v[0]) >= umbral_ancho}
+        for x in range(ancho - 1, min_corrida, -1):
+            if fila[x - min_corrida + 1:x + 1].all():
+                der = x
+                break
+        if der is None or der - izq < min_corrida:
+            continue
+        salida[y] = (izq, der)
+    return salida
+
+
+def suavizar(filas: dict[int, tuple[int, int]], ventana: int = 9
+             ) -> dict[int, tuple[int, int]]:
+    """Mediana por ventana sobre la serie de bordes, para quitar picos sueltos.
+
+    Un solo pixel que salte a una sombra desplaza el contorno entero en esa
+    fila; la mediana lo ignora y conserva el borde real.
+    """
+    if len(filas) < ventana:
+        return filas
+    ys = sorted(filas)
+    izqs = np.array([filas[y][0] for y in ys], dtype=float)
+    ders = np.array([filas[y][1] for y in ys], dtype=float)
+    mitad = ventana // 2
+    out = {}
+    for i, y in enumerate(ys):
+        a, b = max(0, i - mitad), min(len(ys), i + mitad + 1)
+        out[y] = (int(np.median(izqs[a:b])), int(np.median(ders[a:b])))
+    return out
 
 
 def main() -> int:
@@ -114,7 +145,7 @@ def main() -> int:
         return 0
 
     m = mascara(arr, a.umbral)
-    filas = contornos(m)
+    filas = suavizar(contornos(m))
     if not filas:
         raise SystemExit("no he encontrado el raton en la imagen: revisa el umbral")
 
@@ -124,37 +155,53 @@ def main() -> int:
     print(f"ancho: min {min(anchos)}  max {max(anchos)}  (en pixeles de imagen)")
 
     if a.debug:
+        # dos comprobaciones distintas: la mascara (que sale agujereada, y da
+        # igual) y el CONTORNO medido sobre el render, que es lo que importa
         dbg = np.zeros(arr.shape[:2], dtype=np.uint8)
         dbg[m] = 255
         Image.fromarray(dbg).save(ROOT / "docs/research/shots/silueta-mascara.png")
-        print("  mascara en docs/research/shots/silueta-mascara.png")
+        from PIL import ImageDraw
+        vis = Image.open(a.img).convert("RGB")
+        dr = ImageDraw.Draw(vis)
+        for y, (x0, x1) in filas.items():
+            dr.point((x0, y), fill=(255, 90, 90))
+            dr.point((x1, y), fill=(255, 90, 90))
+        vis.save(ROOT / "docs/research/shots/silueta-contorno.png")
+        print("  mascara y contorno en docs/research/shots/")
 
-    # Se muestrea en ALTURA DEL ESQUEMA (unidades del viewBox), que es donde
-    # trabaja el generador, no en pixeles de la imagen.
-    y0, y1 = ys[0], ys[-1]
-    muestras = np.linspace(y0, y1, N_FILAS)
+    # Se normaliza a la CAJA DEL RATON (0..1 en cada eje), no a la imagen: asi
+    # el generador puede reconstruir el contorno en su propio viewBox sin
+    # depender del tamano de la imagen ni de donde caiga el raton en ella.
+    x0 = min(f[0] for f in filas.values())
+    x1 = max(f[1] for f in filas.values())
+    y0, y1 = min(filas), max(filas)
+    ancho, alto = x1 - x0, y1 - y0
+    print(f"caja del contorno: {ancho}x{alto}+{x0}+{y0}")
+
     left, right = [], []
-    for yf in muestras:
-        y = int(round(yf))
-        # la fila mas cercana que tenga medida
+    # Muestreo NO uniforme: coseno, que aprieta las filas en el morro y en el
+    # talon, que es donde la curva gira, y las espacia en el cuerpo, que es casi
+    # recto. Con muestreo uniforme el morro salia con dos puntos y el dibujo lo
+    # reproducia como una cuna estrecha, dejando los botones fuera del contorno.
+    for i in range(N_FILAS):
+        v_objetivo = (1 - np.cos(np.pi * i / (N_FILAS - 1))) / 2
+        y = int(round(y0 + v_objetivo * alto))
         while y not in filas and y <= y1:
             y += 1
         if y not in filas:
             continue
-        x_izq = (filas[y][0] - TX) / SX
-        x_der = (filas[y][1] - TX) / SX
-        y_svg = (y - TY) / SY
-        left.append([round(y_svg, 1), round(x_izq, 1)])
-        right.append([round(y_svg, 1), round(x_der, 1)])
+        v = round((y - y0) / alto, 4)
+        left.append([v, round((filas[y][0] - x0) / ancho, 4)])
+        right.append([v, round((filas[y][1] - x0) / ancho, 4)])
 
-    centro = float(np.mean([(l[1] + r[1]) / 2 for l, r in zip(left, right)]))
-    datos = {"left": left, "right": right, "cx": round(centro, 1),
+    datos = {"left": left, "right": right,
              "origen": Path(a.img).name,
-             "medido": f"{len(left)} filas"}
+             "medido": f"{len(left)} filas",
+             "caja_px": [x0, y0, ancho, alto]}
     Path(a.out).write_text(json.dumps(datos, indent=2))
-    print(f"escrito: {a.out}  ({len(left)} filas, centro x = {centro:.1f})")
-    print("  primeras filas (y_svg, x_svg):", left[:3])
-    print("  ultimas filas:                 ", left[-3:])
+    print(f"escrito: {a.out}  ({len(left)} filas normalizadas)")
+    print("  primeras (v, x):", left[:3])
+    print("  ultimas:        ", left[-3:])
     return 0
 
 
