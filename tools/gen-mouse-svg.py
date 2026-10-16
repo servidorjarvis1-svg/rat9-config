@@ -15,6 +15,7 @@ que se salgan o se pisen: se mueven solos cuando se mueve la silueta.
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 # ─── parametros de la silueta ────────────────────────────────────────────────
@@ -166,6 +167,132 @@ def rect_on_flank(y0, y1, inset=6.0) -> str:
             + " ".join(f"L {x:.1f} {y:.1f}" for x, y in pts[1:]) + " Z")
 
 
+# El bloque <style> del SVG, como cadena NORMAL y no dentro del f-string: asi
+# las llaves del CSS no hay que escaparlas ({{ }}) y no se puede volver a
+# romper el generador por escribir un selector.
+SVG_STYLE = """<style>
+  /* Valores por defecto del propio dibujo, para que el SVG se pueda
+     previsualizar suelto (tools/svg-render.py). La app le QUITA este bloque y
+     pone los suyos a traves de las variables --mg-*: asi el raton no acaba
+     siendo un dibujo aparte con su propia paleta. */
+  .mouse-diagram {
+    --mg-shell:      #171d28;
+    --mg-shell-hi:   #232c3c;
+    --mg-edge:       #3a4761;
+    --mg-plate:      #1e2632;
+    --mg-plate-hi:   #2b3543;
+    --mg-palm:       #1e2632;
+    --mg-recess:     #080a0f;
+    --mg-control:    #252f3d;
+    --mg-control-hi: #3b4859;
+    --mg-seam:       #2b3543;
+    --mg-ridge:      #39465a;
+    --mg-gap:        #0b0e14;
+    --mg-ink:        #93a7c3;
+    --mg-guide:      #5c7691;
+    --mg-badge-bg:   #0b0e14;
+    --mg-badge-edge: #93a7c3;
+    --mg-shadow:     #000000;
+  }
+  .mouse-diagram .badge text {
+    fill: var(--mg-ink); font-family: ui-monospace, monospace;
+    font-weight: 600; letter-spacing: .02em;
+  }
+  .mouse-diagram .z { cursor: pointer; }
+  .mouse-diagram .z .hit { transition: fill .16s ease, stroke .16s ease; }
+  .mouse-diagram .z:hover .hit { fill: var(--mg-control-hi); stroke: var(--mg-edge); }
+  .mouse-diagram .z:focus-visible { outline: none; }
+  .mouse-diagram .z:focus-visible .hit { stroke: var(--mg-edge); stroke-width: 2.6; }
+  .mouse-diagram .z.sel .hit { stroke: var(--mg-edge); stroke-width: 2.6; }
+  .mouse-diagram.sel-mode .z:not(.sel) .hit { opacity: .55; }
+  .mouse-diagram .lbl { fill: var(--mg-ink); font: 10px ui-monospace, monospace; }
+</style>"""
+
+
+# La paleta del dibujo, en tokens. El cuerpo del SVG se genera con hex sueltos
+# y al final se reescriben aqui: asi se ve de un vistazo QUE colores usa el
+# dibujo y no se cuela ninguno nuevo sin pasar por aqui.
+FILL_MAP = {
+    "#171d28": "var(--mg-shell)",
+    "#232c3c": "var(--mg-shell-hi)",
+    "#2b3543": "var(--mg-plate-hi)",
+    "#242e3c": "var(--mg-plate)",
+    "#1e2632": "var(--mg-plate)",
+    "#3a4657": "var(--mg-plate-hi)",
+    "#3a4761": "var(--mg-edge)",
+    "#3d4a5f": "var(--mg-edge)",
+    "#1e2632": "var(--mg-plate)",
+    "#080a0f": "var(--mg-recess)",
+    "#151a23": "var(--mg-recess)",
+    "#141a24": "var(--mg-gap)",
+    "#1b2330": "var(--mg-recess)",
+    "#252f3d": "var(--mg-control)",
+    "#3b4859": "var(--mg-control-hi)",
+    "#0b0e14": "var(--mg-gap)",
+    "#39465a": "var(--mg-ridge)",
+    "#2f3a4c": "var(--mg-seam)",
+    "#93a7c3": "var(--mg-ink)",
+}
+
+
+def tokenizar_cuerpo(svg: str) -> str:
+    """Reescribe la paleta suelta del cuerpo por variables --mg-*.
+
+    Se aplica SOLO a lo que va despues de </defs>: el bloque <style> de delante
+    define los valores por defecto en hex y tiene que quedarse en hex (si se
+    tokenizara, quedaria un var() que se apunta a si mismo).
+    """
+    head, sep, tail = svg.partition("</defs>")
+    for hexv, token in FILL_MAP.items():
+        tail = tail.replace(f'"{hexv}"', f'"{token}"')
+    sueltos = re.findall(r'"(#[0-9a-fA-F]{6})"', tail)
+    if sueltos:
+        print(f"  aviso: quedan colores sin tokenizar en el cuerpo: "
+              f"{sorted(set(sueltos))}")
+    return head + sep + tail
+
+
+# Llamadas numeradas: el numero es el USO HID, que es lo que reporta el
+# firmware. Van DENTRO de la zona cuando cabe, y si no, fuera con linea guia
+# hasta el control (como las callouts del software original).
+#   (uso, x_marca, y_marca, x_destino, y_destino)  destino None = va dentro
+BADGES = [
+    (1,  243, 190, None, None),   # boton izquierdo
+    (2,  335, 190, None, None),   # boton derecho
+    (3,  280, 276, None, None),   # clic de la rueda
+    (4,   78, 373, 112, 373),     # atras
+    (5,  116, 303, 152, 303),     # adelante
+    (6,   70, 424, 100, 424),     # rueda del pulgar, un sentido
+    (7,   70, 488, 100, 488),     # rueda del pulgar, otro sentido
+    (8,  136, 205, 170, 205),     # precision
+    (9,  262, 434, None, None),   # perfil 1
+    (10, 262, 462, None, None),   # perfil 2
+    (11, 262, 490, None, None),   # perfil 3
+]
+BADGE_R = 15.0
+
+
+def svg_badges() -> str:
+    out = []
+    for uso, bx, by, tx, ty in BADGES:
+        guia = ""
+        if tx is not None:
+            guia = (f'  <line x1="{bx + BADGE_R:.0f}" y1="{by:.0f}" '
+                    f'x2="{tx:.0f}" y2="{ty:.0f}" stroke="var(--mg-guide)" '
+                    f'stroke-width="1.4"/>\n'
+                    f'  <circle cx="{tx:.0f}" cy="{ty:.0f}" r="3.5" '
+                    f'fill="var(--mg-guide)"/>\n')
+        out.append(
+            f'{guia}  <g class="badge">\n'
+            f'    <circle cx="{bx:.0f}" cy="{by:.0f}" r="{BADGE_R:.0f}" '
+            f'fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" '
+            f'stroke-width="1.6"/>\n'
+            f'    <text x="{bx:.0f}" y="{by + 5:.0f}" text-anchor="middle" '
+            f'font-size="14">{uso:02d}</text>\n'
+            f'  </g>')
+    return "\n".join(out)
+
+
 def build_svg() -> str:
     # ── silueta ──────────────────────────────────────────────────────────────
     ys_right = [p[0] for p in PROFILE]
@@ -240,7 +367,7 @@ def build_svg() -> str:
         x1, w, h = flank_inner(a) + 8, 34.0, b - a
         mode_svg.append(
             f'''  <g class="z" data-zone="mode-{i + 1}" data-usage="{usage_base + i}"
-     tabindex="0" role="button" aria-label="Botón de perfil {i + 1}">
+     tabindex="0" role="button" aria-label="Modo {i + 1}">
     <rect class="hit" x="{x1:.1f}" y="{a:.1f}" width="{w:.1f}" height="{h:.1f}"
           rx="6" fill="url(#g-plate)"/>
     <rect x="{x1 + 4:.1f}" y="{a + 2.5:.1f}" width="{w - 8:.1f}" height="3"
@@ -275,40 +402,29 @@ def build_svg() -> str:
      class="mouse-diagram" role="img"
      aria-label="Diagrama del Mad Catz R.A.T.9, vista superior esquemática">
 <title>R.A.T.9 — controles</title>
-<style>
-  .mouse-diagram {{
-    --shell:      #171d28;
-    --shell-hi:   #232c3c;
-    --shell-edge: #3a4761;
-    --plate:      #1e2632;
-    --plate-hi:   #2b3543;
-    --recess:     #0b0e14;
-    --ridge:      #4a5872;
-    --metal:      #6e7b8d;
-    --accent:     #4aa8ff;
-    --ink:        #93a7c3;
-  }}
-  .mouse-diagram .z {{ cursor: pointer; }}
-  .mouse-diagram .z .hit {{ transition: fill .16s ease, stroke .16s ease; }}
-  .mouse-diagram .z:hover .hit {{ fill: var(--metal); stroke: var(--accent); }}
-  .mouse-diagram .z:focus-visible {{ outline: none; }}
-  .mouse-diagram .z:focus-visible .hit,
-  .mouse-diagram .z.sel .hit {{ stroke: var(--accent); stroke-width: 2.6; }}
-  .mouse-diagram.sel-mode .z:not(.sel) .hit {{ fill: var(--recess); }}
-  .mouse-diagram .lbl {{ fill: var(--ink); font: 10px ui-monospace, Menlo, monospace; }}
-</style>
+{SVG_STYLE}
 
 <defs>
   <linearGradient id="g-shell" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#232c3c"/><stop offset="60%" stop-color="#171d28"/>
+    <stop offset="0%" stop-color="var(--mg-shell-hi)"/>
+    <stop offset="60%" stop-color="var(--mg-shell)"/>
   </linearGradient>
   <linearGradient id="g-plate" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#3a4657"/><stop offset="100%" stop-color="#242e3c"/>
+    <stop offset="0%" stop-color="var(--mg-plate-hi)"/>
+    <stop offset="100%" stop-color="var(--mg-plate)"/>
   </linearGradient>
   <linearGradient id="g-flank" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="#141a24"/><stop offset="100%" stop-color="#1b2330"/>
+    <stop offset="0%" stop-color="var(--mg-gap)"/>
+    <stop offset="100%" stop-color="var(--mg-recess)"/>
   </linearGradient>
+  <filter id="f-sombra" x="-25%" y="-25%" width="150%" height="150%">
+    <feGaussianBlur stdDeviation="26"/>
+  </filter>
 </defs>
+
+<!-- suelo: da volumen al dibujo, que sin esto queda plano -->
+<ellipse cx="292" cy="418" rx="186" ry="322" fill="var(--mg-shadow)"
+         opacity=".34" filter="url(#f-sombra)"/>
 
 <!-- casco -->
 <path d="{shell}" fill="url(#g-shell)" stroke="#3a4761" stroke-width="1.6"/>
@@ -369,12 +485,12 @@ def build_svg() -> str:
 <!-- rueda del pulgar -->
 <path d="{tw}" fill="var(--recess)" stroke="#3a4761" stroke-width="1.3"/>
 <g class="z" data-zone="thumb-cw" data-usage="{u_cw}" tabindex="0" role="button"
-   aria-label="Rueda del pulgar, un sentido">
+   aria-label="Rueda del pulgar · horaria">
   <path class="hit" d="{tw_top}" fill="#252f3d" stroke="#0b0e14"
         stroke-width="1.6"/>
 </g>
 <g class="z" data-zone="thumb-ccw" data-usage="{u_ccw}" tabindex="0"
-   role="button" aria-label="Rueda del pulgar, otro sentido">
+   role="button" aria-label="Rueda del pulgar · antihoraria">
   <path class="hit" d="{tw_bot}" fill="#252f3d" stroke="#0b0e14"
         stroke-width="1.6"/>
 </g>
@@ -384,6 +500,10 @@ def build_svg() -> str:
 
 <!-- botones de perfil -->
 {mode_svg}
+<!-- llamadas numeradas: el numero es el uso HID que reporta el firmware -->
+<g id="badges">
+{svg_badges()}
+</g>
 </svg>
 '''
 
@@ -395,7 +515,7 @@ def main() -> int:
     a = ap.parse_args()
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    svg = build_svg()
+    svg = tokenizar_cuerpo(build_svg())
     out.write_text(svg)
     zones = svg.count('class="z"')
     print(f"escrito: {out}  ({len(svg)} bytes, {zones} zonas)")

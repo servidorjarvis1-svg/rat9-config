@@ -1,0 +1,103 @@
+/* ============================================================================
+   rat9-config — tokens de diseño
+   ----------------------------------------------------------------------------
+   Un solo objeto de diseño. Todo lo demas referencia estos tokens; no hay
+   colores sueltos en las reglas.
+
+   Decisiones y de donde salen:
+   - Paleta en OKLCH: la luminancia es perceptualmente uniforme, asi que la
+     escalera de superficies son pasos iguales de L y no "tres grises a ojo".
+     El hue es frio y FIJO (258) y el croma bajisimo, para que el matiz no
+     contamine el texto.
+   - Acento azul (hue 245), no el cian del informe ni el violeta de moda.
+     Es el color favorito del dueno del raton y el heredero del cobalto
+     (#3993BE, #0868B2) del software original.
+   - Esquinas ACHAPLANADAS: el original no tenia ni un borde redondeado. Se
+     conserva ese rasgo como seña de identidad; el radio queda solo para
+     controles pequenos.
+   - Contraste: los cuatro niveles de texto pasan AA (>=4.5:1) sobre --bg-1.
+     Verificado con tools/contrast.py, no a ojo.
+   - Fuentes instaladas en la maquina (fc-list), cero CDN: la app tiene que
+     funcionar sin red.
+   ========================================================================= */
+:root {
+  color-scheme: dark;
+
+  /* ── superficies: escalera de luminancia, hue frio fijo, croma minimo ── */
+  --bg-0: oklch(0.145 0.012 258);   /* raiz, vacio */
+  --bg-1: oklch(0.178 0.015 258);   /* paneles */
+  --bg-2: oklch(0.216 0.017 258);   /* paneles elevados, hover de fila */
+  --bg-3: oklch(0.262 0.019 258);   /* inputs, controles */
+  --bg-sunken: oklch(0.105 0.010 258); /* ranuras, canales, huecos */
+
+  /* ── texto: 4 niveles, los 4 pasan AA normal sobre --bg-1 ── */
+  --text-hi:   oklch(0.960 0.008 250);  /* titulares            ~13:1 */
+  --text-body: oklch(0.885 0.015 250);  /* cuerpo               ~10:1 */
+  --text-mute: oklch(0.740 0.020 255);  /* etiquetas             ~6:1 */
+  --text-hint: oklch(0.652 0.022 255);  /* pistas, deshabilitado ~4.9:1 */
+
+  /* ── acento azul: 3 pasos + translucido para el glow ── */
+  --accent-400: oklch(0.790 0.150 246);  /* texto acentuado, hover */
+  --accent-500: oklch(0.700 0.170 245);  /* primario */
+  --accent-600: oklch(0.580 0.165 243);  /* fondo de boton primario */
+  --accent-700: oklch(0.440 0.135 243);  /* pulsado */
+  --accent-glow: oklch(0.700 0.170 245 / 0.28);
+  --accent-wash: oklch(0.700 0.170 245 / 0.12);
+
+  /* ── semanticos ── */
+  --ok:     oklch(0.790 0.150 158);
+  --warn:   oklch(0.810 0.155 85);
+  --danger: oklch(0.700 0.180 27);
+
+  /* ── lineas: derivadas del propio fondo, nunca un gris plano ── */
+  --hairline:        color-mix(in oklab, var(--bg-1), white 13%);
+  --hairline-strong: color-mix(in oklab, var(--bg-1), white 24%);
+  --gap-line:        oklch(0.095 0.010 258); /* el hueco de 1px entre paneles */
+
+  /* ── geometria: achaflanada, no redondeada ── */
+  --chamfer: 11px;        /* el corte de las esquinas */
+  --chamfer-sm: 6px;
+  --r-tech: 2px;          /* controles: casi rectos, tecnico */
+  --r-sm: 5px;
+  --r-pill: 999px;
+
+  /* ── espacio: 4 pt FIJO. El espaciado no escala con la ventana ── */
+  --sp-1: .25rem;  --sp-2: .5rem;   --sp-3: .75rem;
+  --sp-4: 1rem;    --sp-5: 1.5rem;  --sp-6: 2rem;   --sp-7: 3rem;
+
+  /* ── tipografia fluida: ratio 1.3 entre 860 y 2560 px de ventana ──
+     Los tamanos subieron tras ver la app en una ventana de 1908 px: el cuerpo
+     se quedaba en 15 px y las etiquetas en 12,5, que a esa anchura se lee mal. */
+  --step--2: clamp(0.75rem, 0.6958rem + 0.1007vw, 0.875rem);
+  --step--1: clamp(0.875rem, 0.8032rem + 0.1338vw, 1rem);
+  --step-0:  clamp(1rem, 0.9348rem + 0.1212vw, 1.125rem);
+  --step-1:  clamp(1.25rem, 1.1594rem + 0.1685vw, 1.4375rem);
+  --step-2:  clamp(1.5625rem, 1.4272rem + 0.2524vw, 1.8438rem);
+  --step-3:  clamp(1.9375rem, 1.7425rem + 0.3632vw, 2.375rem);
+  --lh-tight: 1.16;  --lh-body: 1.55;
+
+  --font-ui:      "Geist", "Adwaita Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Geist", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "Noto Sans Mono", monospace;
+
+  /* ── movimiento: 3 duraciones y 2 easings, ni una mas ── */
+  --t-fast: 120ms;   /* hover, foco: respuesta inmediata */
+  --t-base: 200ms;   /* cambios de estado */
+  --t-slow: 480ms;   /* carga, apariciones */
+  --ease-out: cubic-bezier(.2, 0, 0, 1);
+  --ease-soft: cubic-bezier(.4, 0, .2, 1);
+
+  /* ── elevacion: por luminancia, no por sombras difusas ── */
+  --edge-light: inset 0 1px 0 oklch(1 0 0 / .05);
+  --drop-1: 0 1px 2px oklch(0 0 0 / .35);
+  --drop-2: 0 10px 28px -10px oklch(0 0 0 / .6), var(--edge-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 1ms; --t-base: 1ms; --t-slow: 1ms; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

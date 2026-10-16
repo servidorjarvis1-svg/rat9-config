@@ -1,0 +1,555 @@
+/* ============================================================================
+   rat9-config — estructura y componentes
+   ----------------------------------------------------------------------------
+   Disposiciones: tres, por grid-template-areas, y el ancho que decide es el de
+   la ventana. El caso real es la ventana estrecha y alta (~950 px) que sale al
+   poner la ventana en una mitad en Hyprland, y el caso maximo 4K.
+
+   Dos trucos que estan aqui por un motivo concreto:
+   - La separacion de 1 px se PINTA en el hueco del grid (background en el
+     contenedor + gap:1px). Con bordes de 1px en cada hijo salen bordes dobles
+     que ademas parpadean al redimensionar la ventana.
+   - min-width/min-height 0 en todos los hijos del grid. Sin eso, un hijo con
+     contenido largo pide su ancho minimo y revienta la columna.
+   ========================================================================= */
+
+* { box-sizing: border-box; }
+
+html, body { block-size: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text-body);
+  font: 400 var(--step-0)/var(--lh-body) var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── esquinas achaflanadas: la seña del software original ── */
+.chamfer {
+  --ch: var(--chamfer);
+  clip-path: polygon(
+    var(--ch) 0, 100% 0,
+    100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%,
+    0 100%, 0 var(--ch));
+}
+.chamfer-sm { --ch: var(--chamfer-sm); }
+
+/* ═══ estructura ══════════════════════════════════════════════════════════ */
+
+.app {
+  display: grid;
+  block-size: 100%;
+  gap: 1px;
+  background: var(--gap-line);
+  grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 388px);
+  grid-template-rows: 50px minmax(0, 1fr);
+  grid-template-areas:
+    "rail head   head"
+    "rail canvas panel";
+}
+.app > * { min-width: 0; min-height: 0; background: var(--bg-0); }
+
+/* Ventana media: el rail se queda en iconos y el panel baja debajo del lienzo */
+@media (max-width: 1240px) {
+  .app {
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: 50px minmax(0, 53%) minmax(0, 1fr);
+    grid-template-areas:
+      "rail head"
+      "rail canvas"
+      "rail panel";
+  }
+  .rail-label { display: none; }
+}
+
+/* Ventana estrecha: una columna, el rail pasa a tira horizontal */
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 46px auto minmax(240px, 44vh) minmax(0, 1fr);
+    grid-template-areas: "head" "rail" "canvas" "panel";
+  }
+  .rail { flex-direction: row; overflow-x: auto; padding: var(--sp-2); }
+  .rail-item { min-inline-size: 46px; }
+}
+
+/* ═══ barra de estado (head) ══════════════════════════════════════════════ */
+
+.head {
+  grid-area: head;
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding-inline: var(--sp-4);
+  background: var(--bg-1);
+}
+
+.head h1 {
+  margin: 0; font: 600 var(--step-1)/1 var(--font-display);
+  color: var(--text-hi); letter-spacing: -.01em;
+}
+.head h1 b { color: var(--accent-500); font-weight: 600; }
+.head .sub {
+  font: 500 var(--step--1)/1 var(--font-mono);
+  color: var(--text-hint); letter-spacing: .06em;
+}
+.head .spacer { margin-inline-start: auto; }
+
+/* ═══ rail de navegacion ══════════════════════════════════════════════════ */
+
+.rail {
+  grid-area: rail;
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-2);
+  background: var(--bg-1);
+}
+
+.rail-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  min-block-size: 40px;
+  border: 0; background: transparent; color: var(--text-mute);
+  font: 500 var(--step--1)/1.2 var(--font-ui);
+  text-align: start; cursor: pointer;
+  border-radius: var(--r-tech);
+  transition: background var(--t-fast) var(--ease-out),
+              color var(--t-fast) var(--ease-out);
+}
+.rail-item svg { inline-size: 20px; block-size: 20px; flex: none; }
+.rail-item:hover { background: var(--bg-2); color: var(--text-hi); }
+.rail-item[aria-current="page"] {
+  background: var(--bg-3); color: var(--text-hi);
+  box-shadow: inset 2px 0 0 var(--accent-500);
+}
+.rail-item:focus-visible {
+  outline: 2px solid var(--accent-400); outline-offset: -2px;
+}
+
+/* el rail en modo iconos muestra el nombre en un tooltip que sale fuera */
+@media (max-width: 1240px) and (min-width: 861px) {
+  .rail-item { position: relative; justify-content: center; padding: var(--sp-2); }
+  .rail-item::after {
+    content: attr(data-name);
+    position: absolute; inset-inline-start: calc(100% + 10px);
+    inset-block-start: 50%; translate: 0 -50%;
+    background: var(--bg-3); border: 1px solid var(--hairline-strong);
+    padding: 4px 8px; border-radius: var(--r-tech);
+    font: 500 var(--step--2)/1 var(--font-mono); letter-spacing: .06em;
+    color: var(--text-hi); white-space: nowrap;
+    opacity: 0; pointer-events: none; z-index: 20;
+    transition: opacity var(--t-fast) var(--ease-out);
+  }
+  .rail-item:hover::after, .rail-item:focus-visible::after { opacity: 1; }
+}
+
+.rail-foot {
+  margin-block-start: auto; padding: var(--sp-3);
+  border-block-start: 1px solid var(--hairline);
+  font: 500 var(--step--2)/1.5 var(--font-mono); color: var(--text-hint);
+}
+
+/* ═══ lienzo (canvas) ═════════════════════════════════════════════════════ */
+
+.canvas {
+  grid-area: canvas; overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; justify-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-5);
+  background:
+    radial-gradient(120% 70% at 50% 0%, oklch(0.205 0.020 258) 0%, var(--bg-0) 68%);
+  position: relative;
+}
+/* Sin sitio para la leyenda, se va: los numeros siguen teniendo su lista
+   completa y accesible en la vista «Botones». */
+@media (max-width: 1180px) { .canvas { grid-template-columns: minmax(0, 1fr); } .numb { display: none; } }
+
+/* Leyenda de las llamadas del dibujo: el numero es el uso HID */
+.numb {
+  display: flex; flex-direction: column; gap: 1px;
+  padding-inline-end: var(--sp-4); margin: 0; list-style: none;
+}
+.numb li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  font: 500 var(--step--2)/1.7 var(--font-mono);
+  color: var(--text-mute); white-space: nowrap;
+}
+.numb b {
+  display: grid; place-items: center;
+  inline-size: 24px; block-size: 24px; flex: none;
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-pill);
+  color: var(--text-hi); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* rejilla tecnica sutil: 1 px cada 32, apenas visible */
+.canvas::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / .022) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / .022) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.device-frame {
+  position: relative;
+  container-type: inline-size;
+  container-name: device;
+  inline-size: 100%;
+  display: grid; place-items: center;
+}
+
+/* ═══ panel de ajustes ════════════════════════════════════════════════════ */
+
+.panel {
+  grid-area: panel; overflow: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 1px;
+  background: var(--gap-line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+/* Barra de scroll visible: sin esto el panel parecia cortado en seco y no se
+   sabia que habia mas abajo. */
+.panel::-webkit-scrollbar, .canvas::-webkit-scrollbar { inline-size: 10px; block-size: 10px; }
+.panel::-webkit-scrollbar-track, .canvas::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb, .canvas::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong); border-radius: var(--r-pill);
+  border: 3px solid var(--bg-0);
+}
+.panel::-webkit-scrollbar-thumb:hover, .canvas::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--hairline-strong), white 25%);
+}
+
+.sect { background: var(--bg-1); padding: var(--sp-4); }
+.sect--tight { padding: var(--sp-3) var(--sp-4); }
+.sect__head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-block-end: var(--sp-3);
+}
+.hud {
+  font: 600 var(--step--2)/1 var(--font-mono);
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-mute);
+}
+.hud--accent { color: var(--accent-400); }
+
+/* ═══ filas de dato ══════════════════════════════════════════════════════ */
+
+.rows { display: flex; flex-direction: column; }
+.row {
+  display: flex; align-items: baseline; gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-block-end: 1px solid var(--hairline);
+}
+.row:last-child { border-block-end: 0; }
+.row dt, .row .k {
+  flex: 1; font: 500 var(--step--1)/1.3 var(--font-ui);
+  color: var(--text-mute);
+}
+.row dd, .row .v {
+  margin: 0; font: 500 var(--step-0)/1.2 var(--font-mono);
+  color: var(--text-hi); font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+.row .v--accent { color: var(--accent-400); }
+.row .v--empty { color: var(--text-hint); }
+.row.is-active { background: var(--accent-wash); }
+
+/* ═══ etiquetas de estado ════════════════════════════════════════════════ */
+
+.tag {
+  font: 600 var(--step--2)/1 var(--font-mono);
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: var(--r-tech);
+  background: var(--bg-3); color: var(--text-mute);
+}
+.tag--ok     { background: oklch(0.790 0.150 158 / .16); color: var(--ok); }
+.tag--warn   { background: oklch(0.810 0.155 85 / .16);  color: var(--warn); }
+.tag--accent { background: var(--accent-wash);           color: var(--accent-400); }
+
+/* ── indicador de conexion ── */
+.dot {
+  inline-size: 8px; block-size: 8px; flex: none;
+  border-radius: var(--r-pill); background: var(--text-hint);
+}
+.dot--on  { background: var(--ok); box-shadow: 0 0 8px oklch(0.790 0.150 158 / .7); }
+.dot--off { background: var(--danger); }
+.dot--wait { background: var(--warn); }
+
+/* ═══ bateria ════════════════════════════════════════════════════════════ */
+
+.batt { display: flex; align-items: center; gap: var(--sp-3); }
+.batt__shell {
+  position: relative; flex: 1; block-size: 10px;
+  background: var(--bg-sunken); border-radius: var(--r-tech);
+  overflow: hidden;
+}
+.batt__fill {
+  block-size: 100%; background: var(--accent-500);
+  transition: inline-size var(--t-base) var(--ease-out),
+              background var(--t-base) var(--ease-out);
+}
+.batt__fill.is-low  { background: var(--warn); }
+.batt__fill.is-crit { background: var(--danger); }
+.batt__n {
+  font: 600 var(--step-0)/1 var(--font-mono); color: var(--text-hi);
+  font-variant-numeric: tabular-nums; min-inline-size: 4ch; text-align: end;
+}
+
+/* ═══ controles ══════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-block-size: 34px; padding: 0 var(--sp-4);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-tech);
+  background: var(--bg-2); color: var(--text-hi);
+  font: 600 var(--step--1)/1 var(--font-ui); cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out),
+              border-color var(--t-fast) var(--ease-out);
+}
+.btn:hover { background: var(--bg-3); border-color: var(--accent-500); }
+.btn:active { background: var(--accent-700); }
+.btn:focus-visible { outline: 2px solid var(--accent-400); outline-offset: 2px; }
+.btn--primary {
+  background: var(--accent-600); border-color: var(--accent-600);
+  color: oklch(0.15 0.02 258);
+}
+.btn--primary:hover { background: var(--accent-500); border-color: var(--accent-500); }
+.btn--quiet { background: transparent; border-color: transparent; color: var(--text-mute); }
+.btn--quiet:hover { background: var(--bg-2); color: var(--text-hi); }
+.btn--danger { color: var(--danger); border-color: oklch(0.700 0.180 27 / .4); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* ── deslizador de DPI: en pasos de 25, no libre ── */
+.slider {
+  -webkit-appearance: none; appearance: none;
+  inline-size: 100%; block-size: 22px; background: transparent; cursor: pointer;
+}
+.slider::-webkit-slider-runnable-track {
+  block-size: 6px; border-radius: var(--r-tech);
+  background:
+    repeating-linear-gradient(to right,
+      var(--hairline-strong) 0 1px, transparent 1px 7.4%),
+    var(--bg-sunken);
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  inline-size: 16px; block-size: 22px; margin-block-start: -8px;
+  border-radius: var(--r-tech);
+  background: var(--accent-500);
+  border: 1px solid oklch(0.15 0.02 258);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.slider:hover::-webkit-slider-thumb { background: var(--accent-400); }
+.slider:focus-visible { outline: none; }
+.slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--accent-400); outline-offset: 2px;
+}
+
+/* ═══ tira de etapas de DPI ══════════════════════════════════════════════ */
+
+.stages { display: grid; gap: var(--sp-2); }
+.stage {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-2); border: 1px solid transparent;
+  border-radius: var(--r-tech); cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out),
+              border-color var(--t-fast) var(--ease-out);
+}
+.stage:hover { background: var(--bg-3); }
+.stage[aria-pressed="true"] { border-color: var(--accent-500); background: var(--accent-wash); }
+.stage__n {
+  font: 600 var(--step--1)/1 var(--font-mono); color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+}
+.stage__v {
+  font: 600 var(--step-1)/1 var(--font-mono); color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ display de LEDs de DPI (como el original) ══════════════════════════ */
+
+.dpiled {
+  display: inline-grid; grid-auto-flow: column; gap: 5px;
+  padding: var(--sp-3); background: var(--bg-sunken);
+  border-radius: var(--r-tech);
+}
+.dpiled i {
+  inline-size: 3ch; block-size: 1.8em;
+  font: 600 var(--step-0)/1.8em var(--font-mono);
+  font-style: normal; text-align: center;
+  color: oklch(0.30 0.02 258); background: var(--bg-0);
+  border-radius: 2px; font-variant-numeric: tabular-nums;
+}
+.dpiled i.on { color: oklch(0.78 0.19 30); text-shadow: 0 0 10px oklch(0.78 0.19 30 / .8); }
+
+/* ═══ lista de zonas del diagrama ════════════════════════════════════════ */
+
+.zones { display: flex; flex-direction: column; gap: 1px; background: var(--gap-line); }
+.zone-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3); background: var(--bg-1);
+  border: 0; color: var(--text-body); text-align: start; cursor: pointer;
+  font: 500 var(--step--1)/1.3 var(--font-ui);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.zone-row:hover { background: var(--bg-2); }
+.zone-row[aria-pressed="true"] { background: var(--accent-wash); color: var(--text-hi); }
+.zone-row .n {
+  font: 600 var(--step--2)/1 var(--font-mono); color: var(--text-hint);
+  font-variant-numeric: tabular-nums; min-inline-size: 2.5ch;
+}
+.zone-row .uso {
+  margin-inline-start: auto; font: 500 var(--step--2)/1 var(--font-mono);
+  color: var(--text-hint);
+}
+
+/* ═══ mensajes: la interfaz dice la VERDAD sobre lo que ha pasado ════════ */
+
+.note {
+  display: flex; gap: var(--sp-3); padding: var(--sp-3);
+  background: var(--bg-2); border-inline-start: 2px solid var(--hairline-strong);
+  border-radius: var(--r-tech);
+  font: 400 var(--step--1)/1.45 var(--font-ui); color: var(--text-mute);
+}
+.note--local { border-inline-start-color: var(--ok); }
+.note--sent  { border-inline-start-color: var(--warn); }
+.note--never { border-inline-start-color: var(--danger); }
+.note b { color: var(--text-hi); font-weight: 600; }
+
+/* ═══ toast ══════════════════════════════════════════════════════════════ */
+
+.toasts {
+  position: fixed; inset-block-end: var(--sp-4); inset-inline-start: 50%;
+  translate: -50% 0; display: flex; flex-direction: column; gap: var(--sp-2);
+  z-index: 50; pointer-events: none;
+}
+.toast {
+  padding: var(--sp-3) var(--sp-4); background: var(--bg-3);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-tech);
+  box-shadow: var(--drop-2); color: var(--text-hi);
+  font: 500 var(--step--1)/1.3 var(--font-ui);
+}
+.toast--ok   { border-color: var(--ok); }
+.toast--warn { border-color: var(--warn); }
+.toast--err  { border-color: var(--danger); }
+
+/* ═══ el ratón: tema del diagrama ════════════════════════════════════════
+   El SVG trae sus propios valores por defecto en hex, pero diagram.js le quita
+   el bloque <style> y estos --mg-* mandan. Asi el ratón pertenece a la misma
+   paleta que el resto y se puede recalibrar desde aquí. */
+
+.device-frame {
+  /* El fallo de la primera pasada fue este: el raton estaba a la MISMA
+     luminancia que el lienzo, asi que se confundia con el fondo. Ahora el
+     cuerpo sube un escalon claro y, sobre todo, el contorno es una linea
+     visible de verdad: en un dibujo tecnico manda la LINEA, no el relleno. */
+  --mg-shell:      color-mix(in oklab, var(--bg-3), white 3%);
+  --mg-shell-hi:   color-mix(in oklab, var(--bg-3), white 10%);
+  --mg-plate:      color-mix(in oklab, var(--bg-3), white 8%);
+  --mg-plate-hi:   color-mix(in oklab, var(--bg-3), white 20%);
+  --mg-palm:       color-mix(in oklab, var(--bg-3), white 2%);
+  --mg-recess:     var(--bg-sunken);
+  --mg-control:    color-mix(in oklab, var(--bg-3), white 10%);
+  --mg-control-hi: color-mix(in oklab, var(--bg-3), white 26%);
+  --mg-edge:       color-mix(in oklab, var(--text-hint), var(--accent-500) 35%);
+  --mg-seam:       color-mix(in oklab, var(--hairline-strong), white 26%);
+  --mg-ridge:      color-mix(in oklab, var(--hairline-strong), white 34%);
+  --mg-gap:        var(--gap-line);
+  --mg-ink:        var(--text-body);
+  --mg-guide:      color-mix(in oklab, var(--hairline-strong), var(--accent-500) 22%);
+  --mg-badge-bg:   var(--bg-sunken);
+  --mg-badge-edge: color-mix(in oklab, var(--text-hint), var(--accent-500) 22%);
+  --mg-shadow:     oklch(0 0 0);
+}
+
+/* Escala con el HUECO del lienzo, no con la ventana: asi el ratón sigue
+   entero cuando el panel se lleva media pantalla. Subio de 46cqi a 68cqi tras
+   ver que en la ventana real quedaba pequeño y rodeado de vacio. */
+.device-frame svg.mouse-diagram {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: min(100%, 68cqi);
+  max-block-size: 82vh;
+  margin-inline: auto;
+}
+@container device (max-width: 420px) { .device-frame svg.mouse-diagram { max-inline-size: 100%; } }
+
+/* Las lineas del dibujo no engordan al escalar (1.5 px a 900 y a 4K) */
+.device-frame svg.mouse-diagram :is(path, rect, line)[stroke] {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Seleccion y foco con el acento de la app */
+.device-frame .z { cursor: pointer; }
+.device-frame .z .hit {
+  transition: fill var(--t-fast) var(--ease-out),
+              stroke var(--t-fast) var(--ease-out);
+}
+.device-frame .z:hover .hit { fill: var(--mg-control-hi); stroke: var(--accent-500); }
+.device-frame .z:focus-visible { outline: none; }
+.device-frame .z:focus-visible .hit {
+  stroke: var(--accent-400); stroke-width: 2.5;
+}
+.device-frame .z.sel .hit {
+  stroke: var(--accent-400); stroke-width: 2.5;
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+.device-frame .mouse-diagram.sel-mode .z:not(.sel) .hit { opacity: .6; }
+.device-frame .lbl { fill: var(--text-hint); font: 10px var(--font-mono); }
+
+/* El texto de las llamadas: su color estaba en el <style> del SVG, que
+   diagram.js elimina para que mande la paleta de la app. Sin esta regla los
+   numeros quedaban en negro sobre negro y los circulos salian VACIOS. */
+.device-frame .badge text {
+  fill: var(--text-hi);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .device-frame .z.sel .hit { animation: latido 2.4s var(--ease-soft) infinite alternate; }
+}
+@keyframes latido {
+  from { filter: drop-shadow(0 0 3px var(--accent-glow)); }
+  to   { filter: drop-shadow(0 0 14px var(--accent-glow)); }
+}
+
+.panel-foot {
+  margin-block-start: auto;
+  background: var(--bg-1);
+  padding: var(--sp-4);
+  padding-block-end: var(--sp-6);   /* aire abajo: quedaba pegado al borde */
+  border-block-start: 1px solid var(--hairline);
+}
+.legend {
+  list-style: none; margin: var(--sp-3) 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  font: 400 var(--step--1)/1.4 var(--font-ui); color: var(--text-mute);
+}
+.legend li { display: flex; gap: var(--sp-2); align-items: flex-start; }
+.legend__m {
+  inline-size: 8px; block-size: 8px; flex: none; margin-block-start: 5px;
+  border-radius: var(--r-pill);
+}
+.legend__m--local { background: var(--ok); }
+.legend__m--read  { background: var(--accent-500); }
+.legend__m--write { background: var(--warn); }
+
+/* ═══ utilidades ════════════════════════════════════════════════════════ */
+
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); }
+.dim { color: var(--text-mute); }
+.hint { color: var(--text-hint); font-size: var(--step--1); }
+.hidden { display: none !important; }
+.stack { display: flex; flex-direction: column; gap: var(--sp-3); }
+.sr {
+  position: absolute; inline-size: 1px; block-size: 1px;
+  overflow: hidden; clip-path: inset(50%);
+}
