@@ -245,10 +245,24 @@ SVG_STYLE = """<style>
     --mg-badge-bg:   #0b0e14;
     --mg-badge-edge: #93a7c3;
     --mg-luz:        #ffffff;
+    /* Llamadas al estilo del software original: caja achaflanada + linea con
+       codo + punto de anclaje. El acento va en cian electrico, no en el naranja
+       del original: misma forma, distinto color (el naranja no es de la casa). */
+    --mg-box-a:      #16283f;
+    --mg-box-b:      #101f31;
+    --mg-accent:     #38bdf8;
   }
   .mouse-diagram .badge text {
     fill: var(--mg-ink); font-family: ui-monospace, monospace;
     font-weight: 600; letter-spacing: .02em;
+  }
+  .mouse-diagram .cal-n {
+    fill: var(--mg-accent); font-family: ui-monospace, monospace;
+    font-weight: 700; letter-spacing: .02em;
+  }
+  .mouse-diagram .cal-t {
+    fill: var(--mg-ink); font-family: ui-monospace, monospace;
+    letter-spacing: .05em;
   }
   .mouse-diagram .z { cursor: pointer; }
   .mouse-diagram .z .hit { transition: fill .16s ease, stroke .16s ease; }
@@ -284,6 +298,9 @@ FILL_MAP = {
     "#39465a": "var(--mg-ridge)",
     "#2f3a4c": "var(--mg-seam)",
     "#93a7c3": "var(--mg-ink)",
+    "#16283f": "var(--mg-box-a)",
+    "#101f31": "var(--mg-box-b)",
+    "#38bdf8": "var(--mg-accent)",
     "#ffffff": "var(--mg-luz)",
 }
 
@@ -305,44 +322,87 @@ def tokenizar_cuerpo(svg: str) -> str:
     return head + sep + tail
 
 
-# Llamadas numeradas: el numero es el USO HID, que es lo que reporta el
-# firmware. Van DENTRO de la zona cuando cabe, y si no, fuera con linea guia
-# hasta el control (como las callouts del software original).
-#   (uso, x_marca, y_marca, x_destino, y_destino)  destino None = va dentro
-BADGES = [
-    (1,  243, 190, None, None),   # boton izquierdo
-    (2,  335, 190, None, None),   # boton derecho
-    (3,  280, 276, None, None),   # clic de la rueda
-    (4,   78, 373, 112, 373),     # atras
-    (5,  116, 303, 152, 303),     # adelante
-    (6,   70, 424, 100, 424),     # rueda del pulgar, un sentido
-    (7,   70, 488, 100, 488),     # rueda del pulgar, otro sentido
-    (8,  136, 205, 170, 205),     # precision
-    (9,  262, 434, None, None),   # perfil 1
-    (10, 262, 462, None, None),   # perfil 2
-    (11, 262, 490, None, None),   # perfil 3
-]
-BADGE_R = 15.0
+# Llamadas: el lenguaje del software original (caja achaflanada -> linea con codo
+# -> punto de anclaje sobre el control), pero alimentado con NUESTRA geometria
+# medida, no con una lamina ajena. Asi registra por construccion.
+#
+# Se probo a superponer la lamina de llamadas original (callouts_labels_overlay)
+# sobre el render: sus 15 anclas caen en zonas arbitrarias y sus cajas tapan el
+# raton, porque se dibujaron para OTRA vista del aparato. Se adopta la forma, no
+# la lamina.
+#
+# Los anclajes NO son numeros escritos a mano: se calculan con la misma geometria
+# que dibuja el raton. Si el contorno se remide sobre la imagen y la forma cambia,
+# los puntos se mueven con ella en vez de quedarse senalando al aire.
+CAJA_X0, CAJA_W, CAJA_H = 414.0, 138.0, 24.0
+CAJA_Y0, CAJA_PASO = 76.0, 52.0
+CHAFLAN = 7.0
+# El viewBox del esquema suelto es 560x800 (el de la capa superpuesta es otro,
+# 700x1090, porque tiene que casar con la imagen). Las cajas tienen que caber en
+# 560: con 236 de ancho se salian y el render las cortaba por la derecha.
+
+
+def anclajes() -> list[tuple[int, str, float, float]]:
+    """Punto de anclaje de cada llamada, calculado sobre la geometria del dibujo."""
+    ym = (PLATE_Y0 + PLATE_Y1) / 2
+    centro_fl = lambda y: (left_edge(y) + flank_inner(y)) / 2      # noqa: E731
+    y_modo = [MODE_BTN[2] + (MODE_BTN[3] - MODE_BTN[2]) * (i + 0.5) / MODE_BTN[4]
+              for i in range(MODE_BTN[4])]
+    t0, t1 = THUMB_WHEEL[3], THUMB_WHEEL[4]
+    tm = (t0 + t1) / 2
+    cy = {u: (y0 + y1) / 2 for _z, _l, u, y0, y1 in SIDE_CONTROLS}
+    return [
+        (1,  "IZQ.",     (_EJE + left_edge(ym)) / 2,  ym),
+        (2,  "DER.",     (_EJE + right_edge(ym)) / 2, ym),
+        (3,  "RUEDA",    _EJE,                        (WHEEL_Y0 + WHEEL_Y1) / 2),
+        (4,  "ATRAS",    centro_fl(cy[4]),            cy[4]),
+        (5,  "ADEL.",    centro_fl(cy[5]),            cy[5]),
+        (6,  "PULG CW",  centro_fl((t0 + tm) / 2),    (t0 + tm) / 2),
+        (7,  "PULG CCW", centro_fl((tm + t1) / 2),    (tm + t1) / 2),
+        (8,  "PRECIS.",  centro_fl(cy[8]),            cy[8]),
+        (9,  "PERFIL 1", centro_fl(y_modo[0]),        y_modo[0]),
+        (10, "PERFIL 2", centro_fl(y_modo[1]),        y_modo[1]),
+        (11, "PERFIL 3", centro_fl(y_modo[2]),        y_modo[2]),
+    ]
+
+
+def caja_llamada(x: float, y: float, w: float, h: float) -> str:
+    """Rectangulo con las esquinas derechas achaflanadas, como el original."""
+    c = CHAFLAN
+    return (f"M {x:.0f} {y + h:.0f} L {x:.0f} {y:.0f} "
+            f"L {x + w - c:.0f} {y:.0f} L {x + w:.0f} {y + c:.0f} "
+            f"L {x + w:.0f} {y + h - c:.0f} L {x + w - c:.0f} {y + h:.0f} Z")
 
 
 def svg_badges() -> str:
+    """Cajas en columna + linea con codo + punto de anclaje.
+
+    Las llamadas se ORDENAN por la altura de su anclaje, no por numero de uso.
+    Si no, la linea de la llamada 4 sale de una caja alta y baja hasta un control
+    bajo, y cruza por delante de las de abajo: con once lineas aquello parecia
+    una marana. Ordenadas por altura, salen abanico y no se pisan.
+    """
     out = []
-    for uso, bx, by, tx, ty in BADGES:
-        guia = ""
-        if tx is not None:
-            guia = (f'  <line x1="{bx + BADGE_R:.0f}" y1="{by:.0f}" '
-                    f'x2="{tx:.0f}" y2="{ty:.0f}" stroke="var(--mg-guide)" '
-                    f'stroke-width="1.4"/>\n'
-                    f'  <circle cx="{tx:.0f}" cy="{ty:.0f}" r="3.5" '
-                    f'fill="var(--mg-guide)"/>\n')
+    for i, (uso, nombre, ax, ay) in enumerate(sorted(anclajes(), key=lambda t: t[3])):
+        by = CAJA_Y0 + i * CAJA_PASO
+        cy = by + CAJA_H / 2
+        relleno = "var(--mg-box-a)" if i % 2 == 0 else "var(--mg-box-b)"
+        # el codo: sale recto del borde izquierdo de la caja y luego entra en
+        # diagonal al anclaje. El tramo recto es lo que le da el aire de lamina
+        # tecnica; en diagonal directa parecia otra cosa.
+        mx = max(ax + 26, 250.0)
         out.append(
-            f'{guia}  <g class="badge">\n'
-            f'    <circle cx="{bx:.0f}" cy="{by:.0f}" r="{BADGE_R:.0f}" '
-            f'fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" '
-            f'stroke-width="1.6"/>\n'
-            f'    <text x="{bx:.0f}" y="{by + 5:.0f}" text-anchor="middle" '
-            f'font-size="14">{uso:02d}</text>\n'
-            f'  </g>')
+            f'  <path d="M {CAJA_X0:.0f} {cy:.0f} L {mx:.0f} {cy:.0f} '
+            f'L {ax + 9:.0f} {ay:.0f}" fill="none" stroke="var(--mg-accent)" '
+            f'stroke-width="1.3" stroke-linejoin="miter"/>\n'
+            f'  <circle cx="{ax:.0f}" cy="{ay:.0f}" r="4" '
+            f'fill="var(--mg-accent)"/>\n'
+            f'  <path d="{caja_llamada(CAJA_X0, by, CAJA_W, CAJA_H)}" '
+            f'fill="{relleno}" stroke="var(--mg-accent)" stroke-width="1.3"/>\n'
+            f'  <text class="cal-n" x="{CAJA_X0 + 10:.0f}" y="{cy + 4:.0f}" '
+            f'font-size="11.5">{uso:02d}</text>\n'
+            f'  <text class="cal-t" x="{CAJA_X0 + 27:.0f}" y="{cy + 4:.0f}" '
+            f'font-size="10">{nombre}</text>')
     return "\n".join(out)
 
 

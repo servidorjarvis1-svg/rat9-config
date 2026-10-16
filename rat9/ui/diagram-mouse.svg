@@ -25,10 +25,24 @@
     --mg-badge-bg:   #0b0e14;
     --mg-badge-edge: #93a7c3;
     --mg-luz:        #ffffff;
+    /* Llamadas al estilo del software original: caja achaflanada + linea con
+       codo + punto de anclaje. El acento va en cian electrico, no en el naranja
+       del original: misma forma, distinto color (el naranja no es de la casa). */
+    --mg-box-a:      #16283f;
+    --mg-box-b:      #101f31;
+    --mg-accent:     #38bdf8;
   }
   .mouse-diagram .badge text {
     fill: var(--mg-ink); font-family: ui-monospace, monospace;
     font-weight: 600; letter-spacing: .02em;
+  }
+  .mouse-diagram .cal-n {
+    fill: var(--mg-accent); font-family: ui-monospace, monospace;
+    font-weight: 700; letter-spacing: .02em;
+  }
+  .mouse-diagram .cal-t {
+    fill: var(--mg-ink); font-family: ui-monospace, monospace;
+    letter-spacing: .05em;
   }
   .mouse-diagram .z { cursor: pointer; }
   .mouse-diagram .z .hit { transition: fill .16s ease, stroke .16s ease; }
@@ -220,59 +234,60 @@
   </g>
 <!-- llamadas numeradas: el numero es el uso HID que reporta el firmware -->
 <g id="badges">
-  <g class="badge">
-    <circle cx="243" cy="190" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="243" y="195" text-anchor="middle" font-size="14">01</text>
-  </g>
-  <g class="badge">
-    <circle cx="335" cy="190" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="335" y="195" text-anchor="middle" font-size="14">02</text>
-  </g>
-  <g class="badge">
-    <circle cx="280" cy="276" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="280" y="281" text-anchor="middle" font-size="14">03</text>
-  </g>
-  <line x1="93" y1="373" x2="112" y2="373" stroke="var(--mg-guide)" stroke-width="1.4"/>
-  <circle cx="112" cy="373" r="3.5" fill="var(--mg-guide)"/>
-  <g class="badge">
-    <circle cx="78" cy="373" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="78" y="378" text-anchor="middle" font-size="14">04</text>
-  </g>
-  <line x1="131" y1="303" x2="152" y2="303" stroke="var(--mg-guide)" stroke-width="1.4"/>
-  <circle cx="152" cy="303" r="3.5" fill="var(--mg-guide)"/>
-  <g class="badge">
-    <circle cx="116" cy="303" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="116" y="308" text-anchor="middle" font-size="14">05</text>
-  </g>
-  <line x1="85" y1="424" x2="100" y2="424" stroke="var(--mg-guide)" stroke-width="1.4"/>
-  <circle cx="100" cy="424" r="3.5" fill="var(--mg-guide)"/>
-  <g class="badge">
-    <circle cx="70" cy="424" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="70" y="429" text-anchor="middle" font-size="14">06</text>
-  </g>
-  <line x1="85" y1="488" x2="100" y2="488" stroke="var(--mg-guide)" stroke-width="1.4"/>
-  <circle cx="100" cy="488" r="3.5" fill="var(--mg-guide)"/>
-  <g class="badge">
-    <circle cx="70" cy="488" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="70" y="493" text-anchor="middle" font-size="14">07</text>
-  </g>
-  <line x1="151" y1="205" x2="170" y2="205" stroke="var(--mg-guide)" stroke-width="1.4"/>
-  <circle cx="170" cy="205" r="3.5" fill="var(--mg-guide)"/>
-  <g class="badge">
-    <circle cx="136" cy="205" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="136" y="210" text-anchor="middle" font-size="14">08</text>
-  </g>
-  <g class="badge">
-    <circle cx="262" cy="434" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="262" y="439" text-anchor="middle" font-size="14">09</text>
-  </g>
-  <g class="badge">
-    <circle cx="262" cy="462" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="262" y="467" text-anchor="middle" font-size="14">10</text>
-  </g>
-  <g class="badge">
-    <circle cx="262" cy="490" r="15" fill="var(--mg-badge-bg)" stroke="var(--mg-badge-edge)" stroke-width="1.6"/>
-    <text x="262" y="495" text-anchor="middle" font-size="14">11</text>
-  </g>
+  <path d="M 414 88 L 260 88 L 243 176" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="234" cy="176" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 100 L 414 76 L 545 76 L 552 83 L 552 93 L 545 100 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="92" font-size="11.5">03</text>
+  <text class="cal-t" x="441" y="92" font-size="10">RUEDA</text>
+  <path d="M 414 140 L 250 140 L 175 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="166" cy="182" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 152 L 414 128 L 545 128 L 552 135 L 552 145 L 545 152 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="144" font-size="11.5">01</text>
+  <text class="cal-t" x="441" y="144" font-size="10">IZQ.</text>
+  <path d="M 414 192 L 339 192 L 322 182" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="313" cy="182" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 204 L 414 180 L 545 180 L 552 187 L 552 197 L 545 204 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="196" font-size="11.5">02</text>
+  <text class="cal-t" x="441" y="196" font-size="10">DER.</text>
+  <path d="M 414 244 L 250 244 L 136 205" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="127" cy="205" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 256 L 414 232 L 545 232 L 552 239 L 552 249 L 545 256 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="248" font-size="11.5">08</text>
+  <text class="cal-t" x="441" y="248" font-size="10">PRECIS.</text>
+  <path d="M 414 296 L 250 296 L 113 303" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="104" cy="303" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 308 L 414 284 L 545 284 L 552 291 L 552 301 L 545 308 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="300" font-size="11.5">05</text>
+  <text class="cal-t" x="441" y="300" font-size="10">ADEL.</text>
+  <path d="M 414 348 L 250 348 L 80 373" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="71" cy="373" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 360 L 414 336 L 545 336 L 552 343 L 552 353 L 545 360 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="352" font-size="11.5">04</text>
+  <text class="cal-t" x="441" y="352" font-size="10">ATRAS</text>
+  <path d="M 414 400 L 250 400 L 121 428" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="112" cy="428" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 412 L 414 388 L 545 388 L 552 395 L 552 405 L 545 412 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="404" font-size="11.5">06</text>
+  <text class="cal-t" x="441" y="404" font-size="10">PULG CW</text>
+  <path d="M 414 452 L 250 452 L 114 437" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="105" cy="437" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 464 L 414 440 L 545 440 L 552 447 L 552 457 L 545 464 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="456" font-size="11.5">09</text>
+  <text class="cal-t" x="441" y="456" font-size="10">PERFIL 1</text>
+  <path d="M 414 504 L 250 504 L 95 462" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="86" cy="462" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 516 L 414 492 L 545 492 L 552 499 L 552 509 L 545 516 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="508" font-size="11.5">10</text>
+  <text class="cal-t" x="441" y="508" font-size="10">PERFIL 2</text>
+  <path d="M 414 556 L 250 556 L 97 486" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="88" cy="486" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 568 L 414 544 L 545 544 L 552 551 L 552 561 L 545 568 Z" fill="var(--mg-box-b)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="560" font-size="11.5">07</text>
+  <text class="cal-t" x="441" y="560" font-size="10">PULG CCW</text>
+  <path d="M 414 608 L 250 608 L 97 487" fill="none" stroke="var(--mg-accent)" stroke-width="1.3" stroke-linejoin="miter"/>
+  <circle cx="88" cy="487" r="4" fill="var(--mg-accent)"/>
+  <path d="M 414 620 L 414 596 L 545 596 L 552 603 L 552 613 L 545 620 Z" fill="var(--mg-box-a)" stroke="var(--mg-accent)" stroke-width="1.3"/>
+  <text class="cal-n" x="424" y="612" font-size="11.5">11</text>
+  <text class="cal-t" x="441" y="612" font-size="10">PERFIL 3</text>
 </g>
 </svg>
