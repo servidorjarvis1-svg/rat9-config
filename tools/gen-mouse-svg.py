@@ -47,7 +47,8 @@ SIDE_CONTROLS = [
     ("btn-back",      "Atrás",               4, 346, 400),
 ]
 THUMB_WHEEL = ("thumb", 6, 7, 398, 516)          # y0, y1; uso 6 = CW, 7 = CCW
-MODE_BTN = ("mode", 9, 424, 500, 3)              # uso base, y0, y1, cuantos
+MODE_BTN = ("mode", 9, 424, 500, 3)              # uso, y0, y1 (los y se recalculan)
+MODE_BTN_HW = 24.0                              # ancho del boton de modos
 
 # Rueda central
 WHEEL_X_HALF, WHEEL_Y0, WHEEL_Y1 = 21.0, 100.0, 252.0
@@ -351,18 +352,17 @@ def anclajes() -> list[tuple[int, str, float, float]]:
     t0, t1 = THUMB_WHEEL[3], THUMB_WHEEL[4]
     tm = (t0 + t1) / 2
     cy = {u: (y0 + y1) / 2 for _z, _l, u, y0, y1 in SIDE_CONTROLS}
+    my = (PLATE_Y0 + 26 + PLATE_Y0 + 152) / 2
     return [
-        (1,  "IZQ.",     (_EJE + left_edge(ym)) / 2,  ym),
-        (2,  "DER.",     (_EJE + right_edge(ym)) / 2, ym),
-        (3,  "RUEDA",    _EJE,                        (WHEEL_Y0 + WHEEL_Y1) / 2),
-        (4,  "ATRAS",    centro_fl(cy[4]),            cy[4]),
-        (5,  "ADEL.",    centro_fl(cy[5]),            cy[5]),
-        (6,  "PULG CW",  centro_fl((t0 + tm) / 2),    (t0 + tm) / 2),
-        (7,  "PULG CCW", centro_fl((tm + t1) / 2),    (tm + t1) / 2),
-        (8,  "PRECIS.",  centro_fl(cy[8]),            cy[8]),
-        (9,  "PERFIL 1", centro_fl(y_modo[0]),        y_modo[0]),
-        (10, "PERFIL 2", centro_fl(y_modo[1]),        y_modo[1]),
-        (11, "PERFIL 3", centro_fl(y_modo[2]),        y_modo[2]),
+        (1,  "IZQ.",     (_EJE + left_edge(ym)) / 2,   ym),
+        (2,  "DER.",     (_EJE + right_edge(ym)) / 2,  ym),
+        (3,  "RUEDA",    _EJE,                         (WHEEL_Y0 + WHEEL_Y1) / 2),
+        (4,  "ATRAS",    centro_fl(cy[4]),             cy[4]),
+        (5,  "ADEL.",    centro_fl(cy[5]),             cy[5]),
+        (6,  "PULG CW",  centro_fl((t0 + tm) / 2),     (t0 + tm) / 2),
+        (7,  "PULG CCW", centro_fl((tm + t1) / 2),     (tm + t1) / 2),
+        (8,  "PRECIS.",  centro_fl(cy[8]),             cy[8]),
+        (9,  "MODOS",    left_edge(my) + 3 + MODE_BTN_HW / 2, my),
     ]
 
 
@@ -536,22 +536,32 @@ def build_svg() -> str:
                       f'y2="{y:.1f}"/>')
     ridges = "\n".join(ridges)
 
-    # ── botones de perfil ────────────────────────────────────────────────────
-    _mzid, usage_base, my0, my1, n = MODE_BTN
-    mh = (my1 - my0) / n
-    mode_svg = []
-    for i in range(n):
-        a, b = my0 + i * mh + 2, my0 + (i + 1) * mh - 2
-        x1, w, h = flank_inner(a) + 8, 34.0, b - a
-        mode_svg.append(
-            f'''  <g class="z" data-zone="mode-{i + 1}" data-usage="{usage_base + i}"
-     tabindex="0" role="button" aria-label="Modo {i + 1}">
-    <rect class="hit" x="{x1:.1f}" y="{a:.1f}" width="{w:.1f}" height="{h:.1f}"
-          rx="6" fill="url(#g-plate)"/>
-    <text class="lbl" x="{x1 + w / 2:.1f}" y="{a + h / 2 + 4:.1f}"
-          text-anchor="middle" font-size="14">{i + 1}</text>
-  </g>''')
-    mode_svg = "\n".join(mode_svg)
+    # ── boton de MODOS, junto al clic izquierdo ───────────────────────────────
+    # Aqui habia tres "botones de perfil" apilados en el flanco, y estaban mal por
+    # dos motivos. Primero, de sitio: el raton tiene UN boton de modos y va al lado
+    # del clic izquierdo, largo y estriado, separado del boton por una junta.
+    # Segundo, de concepto: el informe del software original lista los controles
+    # programables del R.A.T.9 y son SEIS (scroll click, precision aim, forwards,
+    # backwards, thumb CCW, thumb CW). Los "tres modos" eran botones de la VENTANA
+    # del software (el selector rojo/azul/purpura), no piezas del raton: pintarlos
+    # sobre el aparato era inventarselos. Y como caian encima de la rueda del
+    # pulgar (ambos ocupaban y 398-516), las cinco llamadas se apelotonaban.
+    _mzid, usage_modo, _my0, _my1, _n = MODE_BTN
+    my0, my1 = PLATE_Y0 + 26, PLATE_Y0 + 152
+    ys_modo = sample(my0, my1, 9)
+    modo_d = band_shape([(left_edge(y) + 3, y) for y in ys_modo],
+                        [(left_edge(y) + 3 + MODE_BTN_HW, y) for y in reversed(ys_modo)])
+    modo_estr = "\n".join(
+        f'    <line x1="{left_edge(y) + 6:.1f}" y1="{y:.1f}" '
+        f'x2="{left_edge(y) + MODE_BTN_HW:.1f}" y2="{y:.1f}" '
+        f'stroke="#3a4761" stroke-width="1"/>'
+        for y in sample(my0 + 12, my1 - 12, 7))
+    mode_svg = f'''  <g class="z" data-zone="mode" data-usage="{usage_modo}"
+     tabindex="0" role="button" aria-label="Botón de modos">
+    <path class="hit" d="{modo_d}" fill="#252f3d" stroke="#0b0e14"
+          stroke-width="2" stroke-linejoin="round"/>
+    {modo_estr}
+  </g>'''
 
     # ── detalles: junta del reposamanos, escala de ajuste, labio de la ranura
     seam_y = PALM_Y0 + 96
