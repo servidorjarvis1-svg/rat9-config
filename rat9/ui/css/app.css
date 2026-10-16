@@ -323,6 +323,39 @@ body {
 }
 .device-figure figcaption b { color: var(--text-mute); font-weight: 600; }
 
+/* ── visor de GIRO ────────────────────────────────────────────────────────────
+   Los 24 fotogramas reales del aparato. Es lo mismo que hacía el software de Mad
+   Catz, que tampoco era 3D: una ruleta de sprites. Aquí se arrastra.
+   touch-action: pan-y deja pasar el desplazamiento vertical de la página y se
+   queda solo con el horizontal, que es el que gira: sin eso, en táctil el
+   arrastre hace scroll y no gira. */
+.giro {
+  display: grid; place-items: center;
+  inline-size: 100%; max-inline-size: 100%;
+  cursor: grab; touch-action: pan-y;
+  user-select: none; -webkit-user-select: none;
+  outline-offset: 6px;
+}
+.giro:active { cursor: grabbing; }
+.giro img {
+  inline-size: 100%; block-size: auto;
+  max-inline-size: 100%; max-block-size: 50vh;
+  object-fit: contain;
+  pointer-events: none;      /* el arrastre lo lleva la caja, no la imagen */
+}
+.giro__pista {
+  inline-size: min(100%, 20rem); block-size: 3px;
+  border-radius: 2px; background: var(--hairline); overflow: hidden;
+}
+.giro__pista i {
+  display: block; block-size: 100%; inline-size: 0;
+  background: var(--accent-500);
+  transition: inline-size .12s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .giro__pista i { transition: none; }
+}
+
 .bench__toggle {
   display: flex; gap: 1px; background: var(--hairline);
   border: 1px solid var(--hairline); border-radius: var(--r-tech);

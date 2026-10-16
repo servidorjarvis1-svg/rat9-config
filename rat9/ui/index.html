@@ -115,6 +115,27 @@
         </figcaption>
       </figure>
 
+      <!-- VISOR DE GIRO: 24 fotogramas REALES del aparato, extraídos del
+           instalador del software original. No es un modelo 3D inventado: es
+           exactamente lo que hacía el software de Mad Catz, que tampoco era 3D
+           sino una ruleta de sprites. Se arrastra para girarlo.
+           Los fotogramas NO están en el repositorio (son material gráfico
+           ajeno): los saca tools/preparar-giro.sh de la copia local del
+           instalador. Si no están, el botón no se ofrece y no pasa nada. -->
+      <figure class="device-figure hidden" id="deviceGiro">
+        <div class="giro" id="giroCaja" tabindex="0" role="slider"
+             aria-label="Girar el ratón" aria-valuemin="0" aria-valuemax="23"
+             aria-valuenow="0">
+          <img id="giroImg" width="550" height="698" alt="El R.A.T.9 girando,
+               fotograma a fotograma">
+        </div>
+        <div class="giro__pista" aria-hidden="true"><i id="giroPista"></i></div>
+        <figcaption>
+          Giro real del aparato, fotograma a fotograma. <b>Arrastra</b> para
+          girarlo, o usa las flechas del teclado.
+        </figcaption>
+      </figure>
+
       <!-- la lectura del raton, en el sitio del display de LEDs del original -->
       <div class="bench__readout">
         <span class="hud">DPI del perfil activo</span>
@@ -133,6 +154,10 @@
         </button>
         <button class="btn btn--quiet" data-figura="superpuesto" aria-pressed="false">
           Las dos capas
+        </button>
+        <button class="btn btn--quiet" data-figura="giro" aria-pressed="false"
+                id="btnGiro">
+          Giro
         </button>
       </div>
 

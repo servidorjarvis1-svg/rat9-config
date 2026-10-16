@@ -28,9 +28,12 @@ const App = (() => {
   function pintarFigura() {
     const esEsquema = figura === 'esquema';
     const conCapa = figura === 'superpuesto';
+    const conGiro = figura === 'giro';
     $('#deviceFrame').classList.toggle('hidden', !esEsquema);
-    $('#deviceFigure').classList.toggle('hidden', esEsquema);
+    $('#deviceFigure').classList.toggle('hidden', esEsquema || conGiro);
     $('#deviceCapa').classList.toggle('hidden', !conCapa);
+    $('#deviceGiro').classList.toggle('hidden', !conGiro);
+    giroAuto(conGiro);
     // La leyenda numerada es del ESQUEMA: los números señalan zonas del dibujo,
     // y sobre la imagen no hay zonas. Enseñarla ahí sería un número sin nada a
     // lo que apuntar.
@@ -38,6 +41,83 @@ const App = (() => {
     for (const b of document.querySelectorAll('[data-figura]')) {
       b.setAttribute('aria-pressed', String(b.dataset.figura === figura));
     }
+  }
+
+  /* ── visor de GIRO ─────────────────────────────────────────────────────────
+     24 fotogramas REALES del aparato, extraídos del instalador del software
+     original. No es un modelo 3D inventado: es exactamente lo que hacía el
+     software de Mad Catz, que tampoco era 3D sino una ruleta de sprites.
+
+     OJO: los fotogramas NO están en el repositorio (son material gráfico ajeno).
+     Los saca tools/preparar-giro.sh de una copia local del instalador; si no
+     están, el botón no se ofrece y la app funciona igual. */
+  const GIRO_N = 24;
+  const GIRO_PX_FOTO = 14;      // 24 x 14 = 336 px de arrastre por vuelta
+  const GIRO_MS = 220;          // una vuelta sola cada ~5 s
+  let giroFoto = 0;
+  let giroTimer = null;
+  let giroArrastre = null;
+  let giroListo = false;
+
+  function giroPinta() {
+    const n = String(giroFoto + 1).padStart(2, '0');
+    $('#giroImg').src = 'assets/giro/' + n + '.webp';
+    $('#giroCaja').setAttribute('aria-valuenow', String(giroFoto));
+    $('#giroPista').style.inlineSize = ((giroFoto + 1) / GIRO_N * 100) + '%';
+  }
+
+  function giroGira(pasos) {
+    giroFoto = ((giroFoto + pasos) % GIRO_N + GIRO_N) % GIRO_N;
+    giroPinta();
+  }
+
+  function giroAuto(activo) {
+    if (giroTimer) { clearInterval(giroTimer); giroTimer = null; }
+    if (!activo || !giroListo) return;
+    // Si el sistema pide menos movimiento, no gira sola: se queda quieta.
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    giroTimer = setInterval(() => { if (giroArrastre === null) giroGira(1); },
+                            GIRO_MS);
+  }
+
+  async function comprobarGiro() {
+    // ¿Están los fotogramas del giro? Si no, el botón no se ofrece: un botón que
+    // lleva a una imagen rota es peor que no tener el botón.
+    if (!$('#giroImg')) return;
+    try {
+      const r = await fetch('assets/giro/01.webp', { method: 'HEAD' });
+      giroListo = r.ok;
+    } catch { giroListo = false; }
+    if (giroListo) {
+      giroPinta();
+    } else {
+      $('#btnGiro').hidden = true;
+      $('#deviceGiro').classList.add('hidden');
+    }
+  }
+
+  function conectarGiro() {
+    const caja = $('#giroCaja');
+    if (!caja) return;
+    caja.addEventListener('pointerdown', (e) => {
+      giroArrastre = e.clientX;
+      caja.setPointerCapture(e.pointerId);
+    });
+    caja.addEventListener('pointermove', (e) => {
+      if (giroArrastre === null) return;
+      const d = Math.round((giroArrastre - e.clientX) / GIRO_PX_FOTO);
+      if (d !== 0) {
+        giroGira(d);
+        giroArrastre += d * GIRO_PX_FOTO;
+      }
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+      caja.addEventListener(ev, () => { giroArrastre = null; });
+    }
+    caja.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { giroGira(1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { giroGira(-1); e.preventDefault(); }
+    });
   }
 
   /* ── avisos ───────────────────────────────────────────────────────────── */
@@ -176,6 +256,8 @@ const App = (() => {
     for (const b of document.querySelectorAll('[data-figura]')) {
       b.addEventListener('click', () => { figura = b.dataset.figura; pintarFigura(); });
     }
+    conectarGiro();
+    await comprobarGiro();
 
     Diagram.on((tipo, id) => {
       if (tipo !== 'seleccion') return;
