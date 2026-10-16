@@ -1,0 +1,351 @@
+{
+  "estilo_visual": {
+    "colores_hex": [
+      "#0868B2", "#001B2F", "#002A46", "#3D6073", "#6388A6", "#7899AD", "#3993BE", "#196FA3", "#FF9800", "#FFAE32", "#FFAF00", "#F3A900", "#F7941D", "#FFD400", "#E88A00", "#FFD36A", "#626262", "#4A4A4A", "#303030", "#191919", "#090909", "#030303", "#111111", "#00A7E3", "#22A4DC", "#29A4D1", "#1475B4", "#2E9FCC", "#3C7FB1", "#5EB4E3", "#B0DFF8", "#D6E9ED", "#F8F9F8", "#EBEBEB", "#CDCDCD", "#8E8F8F", "#6F756D", "#858887", "#65BDD0", "#557891", "#D6222E", "#F2A000", "#303334", "#BEBEBE"
+    ],
+    "densidad": "Ventana principal ~1024x767 personalizada, sin bordes (WindowStyle=None, transparente, redimensionable con borde (grip)). Cuerpo: barra de pestañas estrecha arriba (4 pestañas 159x21), columna izquierda con placa de nombre de perfil + lista de comandos (filas de ~22px / llamadas (callouts) de 240x29 cada 50px), render del ratón de ~350px en el centro-derecha, medidores/sliders abajo. Densidad media-alta en PROGRAMMING (listas de comandos + llamadas (callouts)), baja en PRODUCT/SETTINGS (una imagen + un panel). Todas las esquinas chaflanadas (sin bordes redondeados).",
+    "tipografia": "Russell Square (russellc.ttf incrustada, NEGRITA (bold), MAYÚSCULAS en botones/etiquetas, tamaños 8-10) + Arial y Arial Rounded MT Bold (arlrdbd.ttf) para el cuerpo de texto."
+  },
+  "funciones_a_cubrir": [
+    "3 modos/estados de desplazamiento (shiftstates) por perfil (LED del botón de modo rojo/azul/violeta), con nombre editable del modo, botones físicos para cambiar de modo, fallback opcional del modo y ActionLock (supresión de claves durante la macro)",
+    "4 niveles de DPI por modo con ejes X e Y independientes, configurados por pasos de 25 DPI (rango 25-5600 para el Cyborg R.A.T.9 original; 25-6400 en el Mad Catz R.A.T.9 de 2013 - factores predeterminados de fábrica 800/1600/3200/5600/6400)",
+    "Sliders double-slider (barra central = X+Y a la vez; sliders individuales para cada eje) con etiquetas 'Low DPI = Slow mouse cursor movement' / 'High DPI = Fast mouse cursor movement'",
+    "Display del DPI actual (medidor circular con valor + render digital LED de 7 segmentos en rojo; imágenes del panel LED dpi_led_1..4 mostrando el estado físico del ratón según el nivel)",
+    "Comportamiento del interruptor de balanceo (rocker DPI) configurable: cambio de nivel (cycle switch, desactivable para liberar botones como macros), asignación de las funciones de los botones DPI a cualquier botón sin anular su programación (DpiButtons_FeatureMap_Description)",
+    "Aim preciso (Precision Aim): porcentaje de reducción de sensibilidad mientras se mantiene pulsado (predeterminado 50%, ajustable con regla slider) o DPI propio de Aim preciso (compilación Mad Catz de 2013); botón aim preciso programable (incluido como modificador) en la compilación posterior",
+    "Programación de botones por modo: botón de la rueda / clic central, aim preciso, adelante, atrás, rueda de pulgar en sentido contrario a las agujas del reloj (cw) / a favor de las agujas del reloj (ccw), clic izquierdo/derecho - seleccionados mediante llamadas (callouts) interactivas en el render del ratón",
+    "Menú de comando por botón: Unprogrammed / Fall Back / New Key Presses / New Macro / New Advanced Command (+ copiar/cortar/borrar/restablecer en el menú contextual), editor de comandos visual predeterminado",
+    "Macros y comandos avanzados: grabación en vivo de teclado + entrada del ratón (grabar el ratón / rueda del ratón arriba/abajo / artistas de tecla ST), bloques de Pulsar / Mantener (Repetir) / Soltar, comandos temporizados y en ciclo, quantizado, grabación de retardos / retardos de escritura, editor de tiempo, advertencias de pulsos de macro no balanceados, reproducción bloqueada (latched), copia de DefaultCommand, iconos por comando (Import Image / Select An Icon), Eliminar comandos no utilizados",
+    "Biblioteca de 126 comandos estándar integrados en 2 grupos (Atajos de aplicaciones (Shortcut): multimedia/correo/navegador/Windows (Win8 charms, Aero Flip, Show Desktop, copiar/cortar/pegar, Vol +/-...); Teclas (Keys): A-Z, 0-9, F1-F12, flechas, modificadores...)",
+    "Gestión de perfiles: Nuevo / Abrir / Guardar / Guardar como / Exportar programación / Importar programación / Imprimir / Activar (Activo en caliente) / Probar Perfil (ventana de prueba en vivo con registro (log)) / Perfil de inicio (startup profile) marcar mediante la bandeja del sistema (tray-icon); perfiles .pr0 almacenados en {Users}/Public/Documents/ - sin cambio automático por aplicación (lo hacía el tercero 'Cyborg Auto-Profiler', no oficial)",
+    "Sensibilidad del cursor por eje (sliders X/Y de la vista trasera/inferior con secciones HID 0x10030), curvas de respuesta del eje / perfiles de curvas, Link de Ejes (Link Axis), calibración",
+    "Batería de la R.A.T.9 (solo wireless): indicador de carga de batería (medidor de porcentaje + cruz roja cuando extraída/vacía), Temporizador de reposo (Sleep Timer, 0 = nunca duerme), Temporizador de reposo de LED (LED Sleep Timer) y temporizador de reposo de LED de D.P.I. (D.P.I. LED Sleep Timer) (apaga LED tras conectar para ahorrar batería), Consumo de energía (Bajo/Completo (Low/Full))",
+    "Ajustes del sensor de hardware: Angle Snap, Sensor Damping (alto para tela), Calibración de superficie (Dinámica/Calibrada), Altura de Despegue Lift-Off Height (sensor PMW3310), Tasa de refresco (Poll Rate) (dinámica hasta 1000 Hz), Restablecer valores de fábrica (Reset to Factory Defaults)",
+    "Panel de iluminación (Lighting) SÓLO para dispositivos hermanos M.M.O.7 / S.T.R.I.K.E.5-7: mosaico de color por modo (mode) + Muestrario de color (Swatch) + sliders RGB aplicados al firmware; NO configurable en el R.A.T.9 (LEDs fijos por modo + panel LED DPI)",
+    "Página de soporte (SUPPORT) con: manual de programación (SST_Manual_*.html), guía de inicio rápido, Tutorial Vídeo, base de conocimientos, Contactar con nosotros / Enviar ticket, versiones de Software/Driver/Firmware con verificación de actualización + descarga + instalación lista (ready-to-install), descarga de perfiles (Download Profiles) del sitio, descarga de pestañas personalizadas (Download Custom Tabs), enlaces a redes sociales (Facebook/Twitter/YouTube/RSS), mostrar página de consejos de inicio",
+    "Página de producto (PRODUCT) con: selección de dispositivo (R.A.T.3/5/7/9 + GlossBlack/Red/White + Albino/Contagion/Infection, M.M.O.7, S.T.R.I.K.E.5/7 + Pantalla V.E.N.O.M., Cyborg V.7, Pro Flight, gamepads L.Y.N.X.), imagen hero por variante de color, página RTF de bienvenida por marca, consejos de inicio '¿Sabías que...?' (Did you know?) con inicio automático (startup)",
+    "Localización a 14 idiomas (cs/de/en/es/fr/it/ja/ko/pt/ru/zh/d a/fi/nl/no/sv), marcas de piel intercambiables (Cyborg silver/azul vs Mad Catz naranja) desde binarios y compilaciones idénticas",
+    "Integración de arranque y bandeja del sistema (tray): splash screen, advertencias de 'No se encontraron controladores - conecte el dispositivo', verificación de semillas de profile-editor"
+  ],
+  "imagenes": [
+    {
+      "descripcion": "Splash screen real del software: tile negro redondeado + garra/'M' roja Mad Catz + wordmark MAD CATZ gris sobre banda blanca.",
+      "ruta": "~/rat9-config/docs/original-ui/splash_screen.png",
+      "url_origen": "extraído del instalador de https://archive.org/download/software-x-64-fre-7-0-45-2 (SmartTechnology.g.resources#splashscreen.png)"
+    },
+    {
+      "descripcion": "Fondo principal de la aplicación (1024x767): navy profundo degradado a azul cobalto con motivos de circuitos, hexágonos, flechas y rejilla digital perspectiva.",
+      "ruta": "~/rat9-config/docs/original-ui/app_window_background.png",
+      "url_origen": "extraído del instalador (Saitek.Branding.g.resources#basebrands_cyborg_background.png)"
+    },
+    {
+      "descripcion": "Cabecera/título de la ventana Mad Catz (madcatz_header): regla naranja superior, logo ovalado dorado, tagline 'Play Harder' plateado y botones ámbar minimizar/cerrar.",
+      "ruta": "~/rat9-config/docs/original-ui/madcatz_header_branding.png",
+      "url_origen": "extraído del instalador (basebrands_madcatz_madcatz_header.png)"
+    },
+    {
+      "descripcion": "Pestaña (tab) del strip propia del chrome: silueta achaflanada 159x21 estado normal (negro) para las páginas Producto/Configuración/Programación/Soporte (Product/Settings/Programming/Support).",
+      "ruta": "~/rat9-config/docs/original-ui/tab_control_normal.png",
+      "url_origen": "extraído del instalador (basebrands_cyborg_tabs_style1_tab.png)"
+    },
+    {
+      "descripcion": "La misma pestaña (tab) en estado presionado/seleccionado (piezas naranjas gfx_orangetab* usan la misma silueta).",
+      "ruta": "~/rat9-config/docs/original-ui/tab_control_pressed.png",
+      "url_origen": "extraído del instalador (basebrands_cyborg_tabs_style1_tab_down.png)"
+    },
+    {
+      "descripcion": "Montaje con las pestañas negros/naranjas + la cabecera Mad Catz en una sola lámina para comparación de estados.",
+      "ruta": "~/rat9-config/docs/original-ui/montage_tabs_and_header.png",
+      "url_origen": "recorte del instalador (composición magick)"
+    },
+    {
+      "descripcion": "Fondo de página del ratón (RAT_Background.png, 275x376) usado por el visor de perfiles y la placa de nombre.",
+      "ruta": "~/rat9-config/docs/original-ui/rat_window_background.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/RAT_Background.png)"
+    },
+    {
+      "descripcion": "Render de producto del R.A.T.9 mostrado en la página de configuración (rat9mouse.png 217x338, vista 3/4 con panel de LED DPI lateral visible).",
+      "ruta": "~/rat9-config/docs/original-ui/rat9_settings_page_mouse_image.png",
+      "url_origen": "extraído del instalador (madcatz/rat9/rat9mouse.png)"
+    },
+    {
+      "descripcion": "Hero de producto del R.A.T.9 (600x407) usado en la página de producto (PRODUCT) del software.",
+      "ruta": "~/rat9-config/docs/original-ui/rat9_hero_product_image.png",
+      "url_origen": "extraído del instalador (madcatz/rat9/rat9.png / Cyborg_RAT9_Hero)"
+    },
+    {
+      "descripcion": "Fotograma 13 de la animación de rotación de 24 cuadros del R.A.T.9 (vista inferior/underside con sensor y compartimento de batería).",
+      "ruta": "~/rat9-config/docs/original-ui/rat9_rotation_frame13.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Rotational.RAT9_13.png)"
+    },
+    {
+      "descripcion": "Panel LED del DPI dibujado en rojo digital tipo 7 segmentos (DpiBigDisplay / dpi_led_1) sobre placa carbón achaflanada.",
+      "ruta": "~/rat9-config/docs/original-ui/dpi_led_level1.png",
+      "url_origen": "extraído del instalador (common/dpidisplay/dpi_led_1.png)"
+    },
+    {
+      "descripcion": "Panel LED del DPI, nivel 4 (misma lámina con lectura roja distinta).",
+      "ruta": "~/rat9-config/docs/original-ui/dpi_led_level4.png",
+      "url_origen": "extraído del instalador (common/dpidisplay/dpi_led_4.png)"
+    },
+    {
+      "descripcion": "Miniatura 'LittleRAT' de la placa lateral del nombre de perfil (ratname).",
+      "ruta": "~/rat9-config/docs/original-ui/settings_page_littlerat.png",
+      "url_origen": "extraído del instalador (common/littlerat.png)"
+    },
+    {
+      "descripcion": "Botón-icono de vista 'UNDERSIDE' (vista inferior) (80x80) del visor rotacional.",
+      "ruta": "~/rat9-config/docs/original-ui/viewicon_underside.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/underside.png)"
+    },
+    {
+      "descripcion": "Botón-icono de vista inferior (underside)/vista 'V-TOP' (cada uno con estados default/over/pressed en los recursos).",
+      "ruta": "~/rat9-config/docs/original-ui/viewicon_vtop.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/vtop.png)"
+    },
+    {
+      "descripcion": "Botón-icono de rotación libre 360º del visor.",
+      "ruta": "~/rat9-config/docs/original-ui/viewicon_360.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/360.png)"
+    },
+    {
+      "descripcion": "Skin de botón glossy vertical (159x2048) degradado azul->blanco->cian con borde #29A4D1 (para los botones de barra).",
+      "ruta": "~/rat9-config/docs/original-ui/button_skin_default.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/button.png)"
+    },
+    {
+      "descripcion": "Skin del botón en estado hover/mouse-over (variación del degradado).",
+      "ruta": "~/rat9-config/docs/original-ui/button_skin_hover.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/button_mo.png)"
+    },
+    {
+      "descripcion": "Lámina de llamadas (callouts) interactivas (501x1000): 14 etiquetas 240x29 azules con contorno naranja y líneas guía con punto terminal que apuntan a cada control físico del ratón.",
+      "ruta": "~/rat9-config/docs/original-ui/callouts_labels_overlay.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/Callouts.png)"
+    },
+    {
+      "descripcion": "Lámina de piezas del visor rotacional (partes resaltadas al pasar el cursor).",
+      "ruta": "~/rat9-config/docs/original-ui/rotational_parts.png",
+      "url_origen": "extraído del instalador (CyborgMouse_V5 Common/parts.png)"
+    },
+    {
+      "descripcion": "Página de ayuda del panel 'DPI Adjustment' (tarjeta gris achaflanada con instrucciones de doble slider X/Y).",
+      "ruta": "~/rat9-config/docs/original-ui/help_dpi_double_slider.png",
+      "url_origen": "extraído del instalador (cyborgrat_doubleslider_dpi_adjustment_en.png)"
+    },
+    {
+      "descripcion": "Página de ayuda del panel 'DPI Adjustment' variante single-slider.",
+      "ruta": "~/rat9-config/docs/original-ui/help_dpi_single_slider.png",
+      "url_origen": "extraído del instalador (cyborgrat_singleslider_dpi_adjustment_en.png)"
+    },
+    {
+      "descripcion": "Página de ayuda del panel 'Precision Aim' (instrucción literal con el % de reducción).",
+      "ruta": "~/rat9-config/docs/original-ui/help_precision_aim.png",
+      "url_origen": "extraído del instalador (cyborgrat_precisionaim_en.png)"
+    },
+    {
+      "descripcion": "Página de ayuda 'Lighting Adjustment' (color por modo + Swatch + RGB, aplica al firmware; dispositivos LED M.M.O.7/S.T.R.I.K.E.).",
+      "ruta": "~/rat9-config/docs/original-ui/lighting_panel_reference.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.Lighting.LightingAdjustment_en.png)"
+    },
+    {
+      "descripcion": "Fondo del componente ColourPicker del Branding Cyborg (para el selector de color RGB/LED).",
+      "ruta": "~/rat9-config/docs/original-ui/colourpicker_background.png",
+      "url_origen": "extraído del instalador (basebrands_cyborg_colourpicker_colourpickerbackground.png)"
+    },
+    {
+      "descripcion": "Barra de colores 'ColourBar' 414x95 del selector de color (ColourSpot/ColourSwatch adjuntos en recursos).",
+      "ruta": "~/rat9-config/docs/original-ui/colourslider_colourbar.png",
+      "url_origen": "extraído del instalador (basebrands_cyborg_colourbar_colourbar.png)"
+    },
+    {
+      "descripcion": "Icono (16x16) de comando tipo 'Advanced' (consola/bloques).",
+      "ruta": "~/rat9-config/docs/original-ui/command_icon_advanced.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.AdvCmd.png)"
+    },
+    {
+      "descripcion": "Icono (16x16) de comando tipo 'Key Press' (tecla).",
+      "ruta": "~/rat9-config/docs/original-ui/command_icon_keypress.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.KeyCmd.png)"
+    },
+    {
+      "descripcion": "Icono (16x16) de comando tipo 'Macro' (documento/panel).",
+      "ruta": "~/rat9-config/docs/original-ui/command_icon_macro.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.MacroCmd.png)"
+    },
+    {
+      "descripcion": "Icono (16x16) de comando tipo 'Cycle' (flechas circulares).",
+      "ruta": "~/rat9-config/docs/original-ui/command_icon_cycle.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.CycleCmd.png)"
+    },
+    {
+      "descripcion": "Icono (16x16) de comando tipo 'Temporal' (reloj de arena).",
+      "ruta": "~/rat9-config/docs/original-ui/command_icon_temporal.png",
+      "url_origen": "extraído del instalador (Pr0fileEditorForms.TemporalCmd.png)"
+    },
+    {
+      "descripcion": "Gráfico de introducción de la página de producto (PRODUCT) (brand Mad Catz, RTF intro).",
+      "ruta": "~/rat9-config/docs/original-ui/product_page_intro_graphic.png",
+      "url_origen": "extraído del instalador (madcatz_madcatzintro_en.png)"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL A: página de configuración (SETTINGS) en ejecución con pestañas Producto/Configuración/Programación/Soporte (Product/Settings/Programming/Support), medidor DPI circular '500 DPI' con arco naranja, pestañas de perfil naranjas 1-3, lista negra de asignaciones con columnas X/Y, render del ratón con anillos naranjas de llamadas (callouts) + lupa ampliada, panel inferior 'PRECISION AIM 100%'.",
+      "ruta": "~/rat9-config/docs/original-ui/video_settings_page_dpi_dial.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=YyA0nL__NHc (R.A.T. 7 Gaming Mouse Software, t≈16s)"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL B: variante de la página de configuración (SETTINGS) mostrando el medidor DPI '5600', filas de parámetros naranjas, grafo 'Precision Axis' con curva naranja y botones de vista (underside/top/360) junto al render.",
+      "ruta": "~/rat9-config/docs/original-ui/video_settings_page_alt.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=YyA0nL__NHc"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL C: hover en página de configuración (SETTINGS) con resaltado/inset naranja ampliado sobre la zona del botón lateral del ratón.",
+      "ruta": "~/rat9-config/docs/original-ui/video_settings_page_mouse_hover.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=YyA0nL__NHc"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL D: página de programación (PROGRAMMING) completa: pestaña PROGRAMMING naranja #F2A000 activa, 'LOADED PROFILE: Desktop', filas-llamadas (callouts) azules (Scroll Button/Precision Aim/Forwards/Back/Thumb...), líneas guía naranjas al render, vista activa 360º naranja, pestañas PROFILE 1/2/3 (activa cian #00A7E3), botón ACTIVATE PROFILE, fila inferior NEW/OPEN/SAVE/SAVE AS/TEST y display '800 DPI'.",
+      "ruta": "~/rat9-config/docs/original-ui/video_profil_editor_programming_page.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk (Cyborg RAT 7 tutorial: programming, t≈3m)"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL E: zoom de las llamadas (callouts) azules circulares y filas de comandos de la página de programación (PROGRAMMING).",
+      "ruta": "~/rat9-config/docs/original-ui/video_callouts_zoom.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL F: macro grabada listada (pulsaciones repetidas 'Volume Up') en el editor/registro de pruebas.",
+      "ruta": "~/rat9-config/docs/original-ui/video_macro_recorded_list.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL G: ventana de prueba (Test) con chrome Windows estándar 'Keep this window open whilst testing' + registro en vivo (log) de eventos + botones Aceptar/Cerrar (OK/Close).",
+      "ruta": "~/rat9-config/docs/original-ui/video_commandeditor_dialog_full.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL H: menú contextual abierto desde una fila de comandos (callout): New Key Presses / New Macro / New Advanced Command + acciones de restablecimiento/borrar/Restablecer/Cargar-Guardar (Reset/Delete/Load-Save).",
+      "ruta": "~/rat9-config/docs/original-ui/video_command_chooser_popup.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk"
+    },
+    {
+      "descripcion": "Captura de vídeo REAL I: ventana de prueba (Testing) con instrucciones 'Keep this window open whilst testing' y pestañas interna (vista parcial).",
+      "ruta": "~/rat9-config/docs/original-ui/video_commandeditor_dialog_open.jpg",
+      "url_origen": "fotograma de https://www.youtube.com/watch?v=6H5K8TiDtzk"
+    },
+    {
+      "descripcion": "Foto oficial de la galería Cyborg 2011: receptor/cargador del R.A.T.9 con 2 baterías (hardware wireless).",
+      "ruta": "~/rat9-config/docs/original-ui/cyborg_site_gallery_r9_6.jpg",
+      "url_origen": "https://web.archive.org/web/20110902055816/http://www.cyborggaming.com/imgs/gallery/r9_6.jpg"
+    },
+    {
+      "descripcion": "Fotos de producto oficiales R.A.T.9 (4) y R.A.T.7 (2) de la galería del sitio Cyborg para referencia de colorway.",
+      "ruta": "~/rat9-config/docs/original-ui/cyborg_site_gallery_r9_1.jpg .. r9_5.jpg, r7_8.jpg, r7_9.jpg",
+      "url_origen": "https://web.archive.org/web/20110902055816/http://www.cyborggaming.com/prod/rat9.htm"
+    },
+    {
+      "descripcion": "Montaje de 4 marcos de ayuda 902x552 (EN/DA) con las tarjetas de llamadas (callouts) del software (estilo de tarjetas de ayuda flotantes).",
+      "ruta": "~/rat9-config/docs/original-ui/montage_902x552_frames.png",
+      "url_origen": "recorte del instalador (Pr0fileEditor_Forms resources)"
+    },
+    {
+      "descripcion": "Montaje de fondos de marca 1382x886 (splash/wallpapers del arranque) y variantes de ventana.",
+      "ruta": "~/rat9-config/docs/original-ui/montage_branding_frames.png, montage_window_variants.png",
+      "url_origen": "recorte del instalador (Saitek.Branding / Pr0fileEditor_Forms)"
+    },
+    {
+      "descripcion": "Carpeta con 1832 PNGs tallados de todos los binarios del instalador (todos los skins, marcos, splash, iconos, por ensamblado/offset), + manifest y 65 recursos WPF con nombre en gres_controller/.",
+      "ruta": "~/rat9-config/docs/original-ui/extracted-from-installer/ y ~/rat9-config/docs/original-ui/gres_controller/",
+      "url_origen": "https://archive.org/download/software-x-64-fre-7-0-45-2/R.A.T 9/RAT_9_Mouse_7_0_45_2_x64_Software/Msi/Software_x64_fre_7_0_45_2.cab"
+    }
+  ],
+  "inventario_pantallas": [
+    {
+      "controles": [
+        "lista/selección de dispositivos soportados (R.A.T.3/5/7/9 + variantes de color, M.M.O.7, S.T.R.I.K.E.5/7, Cyborg V.7, Pro Flight, gamepads L.Y.N.X.)",
+        "render 'hero' del modelo conectado (600x407, variantes GlossBlack/GlossRed/GlossWhite)",
+        "RTF de bienvenida por marca (CyborgIntro / MadcatzIntro)",
+        "página de tips 'Did you know?' con checkbox 'Show at startup'"
+      ],
+      "funcion": "Seleccionar el dispositivo a programar y mostrar el producto conectado con texto de introducción de marca",
+      "nombre": "PRODUCT (tooltip: 'Select your device')"
+    },
+    {
+      "controles": [
+        "imagen de producto fija del modelo sobre fondo negro (RAT_Background 275x376) + placa ratname con LittleRAT",
+        "medidor DPI circular (arco naranja, número blanco) + DpiBigDisplay render LED rojo + imágenes dpi_led_1..4 del panel físico",
+        "panel 'DPI Adjustment': DoubleSlider por nivel (barra central ajusta X+Y, 2 sliders para X e Y por separado), 4 niveles, pasos de 25 DPI",
+        "panel 'Precision Aim': slider horizontal con marcador y lectura % (50% por defecto) o DPI propio en la versión de 2013",
+        "botón/link Windows Mouse Settings",
+        "botón Reset To Defaults (aparece con storyboard al cambiar valores)",
+        "widgets de hardware según dispositivo: Angle Snap, Sensor Damping, Surface Calibration (Dinámica/Dinamica/Calibrada), Altura de Despegue (Lift-Off Height), Tasa de refresco (Poll Rate), Consumo de energía (Bajo/Completo (Low/Full)), Temporizador de reposo (Sleep Timer), Temporizador de reposo de LED (LED/D.P.I. LED Sleep Timer), Indicador de carga de batería (Battery Charge Indicator) con cruz roja, Brillo de LED (LED Brightness)",
+        "tarjetas de ayuda chamflanadas superpuestas (help DPI/Precision Aim)"
+      ],
+      "funcion": "Examinar y cambiar los ajustes de hardware: 4 niveles de DPI (X/Y independientes, para cada modo) + Precision Aim + parámetros del sensor/energía",
+      "nombre": "SETTINGS (tooltip: 'Examine and change your hardware settings'; página interna 'Product View'/ratsettingspage)"
+    },
+    {
+      "controles": [
+        "visor rotacional 3D del ratón (24 fotogramas) con 3 iconos de vista a la derecha: UNDER / TOP / 360 (estados normal/hover/pulsado)",
+        "caja 'LOADED PROFILE' + campo editable del nombre de perfil (texto Russell Square en MAYÚSCULAS (UPPERCASE))",
+        "llamadas interactivas (Callouts.png) sobre el render: botón de la rueda de desplazamiento (scroll wheel button) HID 0x90003, botón de Aim preciso (precision aim button) 0x90008, botón adelante (forwards button) 0x90005, botón atrás (backwards button) 0x90004, rueda de pulgar en sentido antihorario (thumb anticlockwise) 0x90007, rueda de pulgar en sentido horario (thumb clockwise) 0x90006; en la vista inferior: Sensibilidad del ratón (Mouse sensitivity) 0x10030 (sliders X/Y)",
+        "menú contextual por llamada (callout): Unprogrammed / Fall Back / New Key Presses / New Macro / New Advanced Command, acciones copiar/pegar/borrar/restablecer/cargar-guardar (copy/paste/delete/reset/load-save)",
+        "ActionBlockEditor: grabación en vivo de teclado/ratón, bloques Pulsar (Press)/Mantener (Repeat)/Soltar (Release), comandos en ciclo/temporizados (Cycle y Temporal), Retardos de registro y de tecleo (Record Delays/Type Delay) (editor de tiempos ocultos a 0), iconos de comando propias (Import Image)",
+        "3 botones de modo/estados de desplazamiento (shiftstates) (y=500, x=170/273/376) con skins rojo/azul/púrpura (R/B/P), 'Crear estados de desplazamiento' (Create Shiftstate), 'Elegir botones de desplazamiento' (Choose Shift Buttons), fallback, ActionLock ™, Exportar/Importar programación (Export/Import Programming)",
+        "botón ACTIVATE PROFILE (x=625,y=70 con 4 estados) + texto activar (activatetext)",
+        "fila inferior NEW (x=170) / OPEN (x=290) / SAVE (x=410) / SAVE AS (x=530) / TEST (x=650)",
+        "grafo inferior de curva de respuesta del eje (AxisResponseCurveControl + ScrollingGraph) con perfiles de curvas/curvatura (Curve profiles/Curvature)",
+        "diálogo Test: 'Mantener esta ventana abierta mientras se prueba' (Keep this window open whilst testing) con registro en vivo (log) de las acciones pulsadas (chrome Windows estándar, Aceptar/Cerrar (OK/Close))"
+      ],
+      "funcion": "'Haz que tu controlador cobre vida': por-Modo (shiftstate), vincula cada botón físico a comandos/macros y gestiona los perfiles .pr0; test en vivo",
+      "nombre": "PROGRAMMING (tooltip: 'Make your controller come alive'; página interna 'Rotational View', definida al 100% en RotationalView.xml)"
+    },
+    {
+      "controles": [
+        "Read Programming Manual (SST_Manual_En.html) / Quick Start Guide / Tutorial Video",
+        "Knowledgebase / Contact Us / Submit a Ticket",
+        "Software Version / Driver Version / Firmware Version + indicadores 'update available' / 'ready to install' / 'up to date'",
+        "Download Drivers and Software / Download Profiles / Download Custom Tabs",
+        "Show startup tips page",
+        "enlaces sociales: Facebook / Twitter / YouTube / RSS (RssFeedDisplay)"
+      ],
+      "funcion": "Ayuda, manual/vídeo, comprobación de versiones y descargas de la web",
+      "nombre": "SUPPORT (tooltip: 'Get: Help, Tips and Contact us')"
+    },
+    {
+      "controles": [
+        "ToolStrip WinForms: Nuevo/Abrir/Guardar/Guardar como/Imprimir/Probar Perfil (New/Open/Save/Save As/Print/Test Profile) + combo de perfil + botón 'Views' (split, con Vistas (Views.Image))",
+        "menú contextual de la ventana sin bordes: Maximize/Minimize/Close"
+      ],
+      "funcion": "Cromo común de la aplicación: barra de herramientas de gestión del perfil activo siempre visible",
+      "nombre": "Barra principal MainForm (ToolStrip, WinForms dentro del shell WPF)"
+    },
+    {
+      "controles": [
+        "mensaje 'No se encontraron controladores' (No controllers found) + 'Conecta el dispositivo que deseas configurar y ejecuta el programa de nuevo.' (Plug in the device you wish to configure and run the program again.)",
+        "mensaje de error de semillas 'No controller seeds found - reinstala'" 
+      ],
+      "funcion": "Estado sin dispositivo conectado",
+      "nombre": "Estado vacío del shell (w_noControllers)"
+    },
+    {
+      "controles": [
+        "pantalla de inicio splash (SplashScreen.png) al arranque, icono madcatz.ico, título 'Smart Technology', permiteTransparencia/Topmost"
+      ],
+      "funcion": "Arranque de la aplicación",
+      "nombre": "Splash + icono (MainWindow SmartTechnology)"
+    }
+  ],
+  "no_verificado": [
+    "En QUÉ página exacta aparece el medidor de batería (BatteryChargeIndicator) de la R.A.T.9: el control existe en Saitek.WPF_ControlLib (battery.baml/batterychargeindicator.baml con PercentageIndicator y RedCross) y hay el string 'Battery Life', pero no quedó evidencia gráfica de su posición (probable PRODUCT o barra superior del RAT9)",
+    "Número de perfiles: los binarios y las reviews confirman 3 modos/estados de desplazamiento (shiftstates) (LEDs rojo/azul/violeta); los '4 perfiles' reportados del ratón físico probablemente son los 4 NIVELES de DPI (800/1600/3200/6400), no 4 perfiles programables por software",
+    "Identidad exacta del panel inferior con grafo y línea naranja del vídeo ('Precision Axis'): puede ser el AxisResponseCurveControl (curva de respuesta) o parte del panel de Aim preciso (Precision Aim); a resolución de vídeo no se distingue",
+    "Estado activo de la pestaña (tab) en el skin CYBORG (2010-2011): el naranja #FF9800 está verificado para el skin Mad Catz (2013); la variante Cyborg silver/azul usa BAMLs silver pero su estado 'selected' no quedó en ningún recurso visto",
+    "La animación exacta del splash (si la hay) y el botón circular azul inferior-izquierdo de la página de configuración (SETTINGS) del vídeo",
+    "Si 'Tasa de refresco (Poll Rate)', 'Altura de despegue (Lift-Off Height)' y opciones similares aparecen en la página de configuración (SETTINGS) de la R.A.T.9 2013 (están en la tabla de strings global de la app; puede que sean de dispositivos hermanos como R.A.T.M/M.O.U.9 con sensor PMW3310)",
+    "El menú de llamada (callout) visto en vídeo incluye además de las entradas de strings verificados (Unprogrammed/Fall Back/New Key Presses/New Macro/New Advanced Command) ítems de copiar/borrar/restablecer/cargar-guardar (copy/delete/reset/load-save) que no confirmé 1:1 con los strings",
+    "Ningún widget de nivel de batería del RECEPTOR (el dock cargador es físico, con sus LEDs propios que no se controlan por software según lo hallado)",
+    "Los 2 marcos 1382x886 del Branding (fondo marfil con bocetos y fondo azul 'energía') son splash/wallpaper del arranque; su uso exacto en el flujo de páginas no quedó confirmado"
+  ],
+  "uso_de_la_imagen_del_raton": "En PROGRAMMING era un DIAGRAMA INTERACTIVO 3D: render de 24 fotogramas del ratón propio que ROTAN (control 'Rotational View' con 3 botones de vista: VISTA INFERIOR (underside) / VISTA SUPERIOR (vtop) / 360º - libres y con estados hover/pulsado), y sobre el render hay LÁMINAS DE LLAMADAS (callouts) (Callouts.png: etiquetas 240x29 con fondo azul claro/oscuro y CONTORNO NARANJA, líneas guía terminadas en punto naranja) que apuntan a cada control físico; al hacer hover, la zona del ratón se RESALTA (cada región tiene estado STATIC/ACTIVE y en vídeo se ve además un anillo naranja con LUPA/inset AMPLIADO flotando sobre el botón tocado), y al hacer clic abre el menú de comandos (Unprogrammed/Fall Back/New Key Presses/New Macro/New Advanced Command...) que escriben el nombre del comando en la fila de la lámina de llamadas (callout). En SETTINGS la misma imagen era FOTO DE PRODUCTO FÍA (render 3/4 217x338 sobre placa negra) usada como 'Product View' con el panel LED DPI renderizado (dpi_led_*) y el placa ratname con miniatura LittleRAT; la imagen cambia según la variante de color del hardware (GlossBlack/Red/White/Albino/Contagion/Infection - cada colorway con su render y su 'hero')."
+}

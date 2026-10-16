@@ -88,8 +88,9 @@
         <button class="ghost" id="dl">Descargar</button>
       </div>
       <div class="note">
-        Enviar el perfil al ratón necesita <b>root</b> y no está verificado:
-        <code>sudo python3 -m rat9.cli send --file perfil.pr0</code>
+        Enviar el perfil al ratón <b>no necesita root</b> (las reglas udev dan el
+        acceso al grupo <code>rat9</code>), pero <b>toca el ratón</b> y no está verificado:
+        <code>python3 -m rat9.cli send --file perfil.pr0</code>
       </div>
     </div>
   </section>

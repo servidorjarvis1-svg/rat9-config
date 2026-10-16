@@ -61,7 +61,9 @@ MODE_BITS = 0x1000
 AXIS_BITS = 0x0100
 AXIS_X, AXIS_Y = 1, 2
 N_MODES = 4
-DPI_MIN, DPI_MAX = 100, 6400
+# Pasos de 25 y minimo 25: confirmado con el software original, que ajustaba el
+# DPI en multiplos de 25 y arrancaba en 25. Antes poniamos 100, que era inventado.
+DPI_MIN, DPI_MAX = 25, 6400
 
 # Escritura (del driver de Windows; NO verificada en hardware).
 # Nota: el raton rechaza el vendor OUT directo (0x40) con PIPE, asi que

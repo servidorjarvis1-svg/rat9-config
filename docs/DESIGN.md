@@ -43,6 +43,18 @@ debe respetarlo en vez de inventarse un 0.
 de momento, pero se muestra en el panel de diagnóstico como dato en crudo: es la
 prueba de que hay más firmware por descubrir y no queremos esconderlo.
 
+**Cuidado con llamar "perfiles" a los cuatro slots.** La ingeniería inversa del
+software original documenta **3 estados de desplazamiento** (*shiftstates*, con
+LED rojo / azul / violeta y nombre editable) y **4 niveles de DPI por modo**. Los
+valores que leemos —800, 1600, 3200, 6400, exactamente los "niveles" de fábrica—
+encajan con la segunda lectura, no con la primera. Nuestro direccionamiento
+(`0x1000·m + 0x100·eje + 0x73`) tiene un solo campo de 2 bits, y encaja igual de
+bien con "4 modos" que con "4 niveles", así que **la ambigüedad no está resuelta
+con los datos que tenemos**. Antes de decidir si la interfaz dice "perfil" o
+"etapa" hay que saldarla con una prueba de hardware (leer `0x0074` mientras se
+pulsa el botón de modo del ratón). Mientras tanto, la interfaz no usa ninguna de
+las dos palabras para esos cuatro slots.
+
 ## 3. Modelo de capacidades — la decisión que define toda la interfaz
 
 El error más fácil aquí es tratar la app como si pudiera escribir en el ratón.
@@ -152,11 +164,149 @@ en §7 en cuanto cierre la investigación en curso.
 
 Resultado de la investigación: pendiente, se añade aquí como §7.bis.
 
+## 7.bis. Resultado de la investigación
+
+### 7.bis.1 El software original: qué hacía, y qué copiamos
+
+El instalador real (98 MB de .cab, recuperado de archive.org) se abrió y se
+extrajeron sus **recursos gráficos**, además de analizar capturas de la app en
+funcionamiento. Esto es lo que había:
+
+**Estructura** — ventana de 1024×767 sin bordes, con **4 pestañas**: *Product*,
+*Settings*, *Programming*, *Support*. En *Programming* estaba todo lo
+interesante: el ratón en el centro como **render de 24 fotogramas que rota**, con
+tres botones de vista (**superior / inferior / 360°**), y sobre el render una
+lámina de **etiquetas de llamada** (240×29, contorno naranja, con línea guía) que
+apuntan a cada control. Al pasar el ratón la zona se resalta y aparece un anillo
+con lupa. Al hacer clic se abre el menú de comandos:
+
+> *Unprogrammed / Fall Back / New Key Presses / New Macro / New Advanced Command*
+
+Eso encaja exactamente con nuestro esquema (`ROLE_UNPROGRAMMED`, `ROLE_FALLBACK`
+y los tipos de comando), lo cual es una validación cruzada de que la ingeniería
+inversa del formato `.pr0` fue por buen camino.
+
+**Lo que confirma del protocolo** (y nos ahorra dudas):
+- **Los macros son bloques *pulsar / mantener / soltar*** — exactamente nuestros
+  `BLOCK_PRESS` / `BLOCK_REPEAT` / `BLOCK_RELEASE`. El original los llamaba
+  *Pulsar / Mantener (Repetir) / Soltar*, e incluso avisaba de "pulsos de macro no
+  balanceados" y bloqueaba la reproducción (*latched*).
+- **El DPI va en pasos de 25.** Nuestro `DPI = raw·25 + 25` queda confirmado.
+  Consecuencia: `protocol.DPI_MIN = 100` **está mal**, el mínimo representable es
+  **25** y la interfaz tiene que moverse en múltiplos de 25, no con un slider libre.
+- **Rango real**: 25–5600 en el Cyborg R.A.T.9, 25–6400 en el Mad Catz de 2013.
+- El DPI se ajustaba con un **doble slider**: una barra central movía X e Y a la
+  vez, y luego cada eje por separado. Con las etiquetas *"Low DPI = Slow mouse
+  cursor movement"* / *"High DPI = Fast…"*.
+- **Precisión (aim)** = un porcentaje de reducción de sensibilidad mientras se
+  mantiene pulsado, **50 % por defecto**, ajustable con un slider. Es una función
+  real que deberíamos exponer: hoy la tenemos en el diagrama como una zona más,
+  pero sin su parámetro.
+
+**Funciones del original que sí debemos cubrir** (todas verificadas en su UI):
+- 3 estados de desplazamiento con nombre editable y LED por estado.
+- Niveles de DPI con X/Y independientes.
+- Programación de los 8 botones del ratón desde las llamadas del diagrama.
+- Editor de comandos con **126 comandos integrados** en dos grupos (atajos de
+  aplicación y teclas), e icono por comando.
+- Temporizadores de reposo y de reposo del LED, y consumo bajo/completo — cosas
+  **específicas de un ratón inalámbrico** que a nosotros nos interesan.
+- Ajustes de sensor: *angle snap*, amortiguación, calibración de superficie,
+  altura de despegue, tasa de refresco, y reset a fábrica.
+- Gestión de perfiles: nuevo/abrir/guardar/exportar/importar/**probar en vivo**
+  (una ventana que registra lo que el ratón envía mientras pulsas).
+- Estado vacío explícito cuando no hay dispositivo: *"Conecta el dispositivo que
+  deseas configurar y ejecuta el programa de nuevo."*
+
+**La pregunta de la iluminación, resuelta: NO.** El panel de *Lighting* del
+software original existía, pero era **solo para los dispositivos hermanos**
+(M.M.O.7 y S.T.R.I.K.E.5/7). En el R.A.T.9 los LEDs son **fijos por modo** (rojo /
+azul / violeta) más el panel de LEDs de DPI. No hay canal de color que controlar,
+así que **no se dibuja pestaña de iluminación**. Lo que sí se muestra es el
+**panel de LEDs de DPI** tal como lo dibujaba el original (display de 7 segmentos
+en rojo), y el color del LED del modo activo como dato informativo.
+
+**Estilo visual del original** — y aquí hay una herencia que merece la pena
+conservar: **esquinas achaflanadas en todo** (nada de bordes redondeados), azul
+marino profundo (`#001B2F`, `#0868B2`) con cobalto (`#3993BE`, `#00A7E3`) y
+naranja como único acento (`#FF9800`, `#FFAE32`), tipografía **Russell Square en
+negrita y mayúsculas** a 8–10 px. Nuestra versión mantiene lo estructural
+—esquinas técnicas achaflanadas, jerarquía por densidad— y cambia el naranja por
+el acento azul, que además es el color favorito del dueño del ratón.
+
+### 7.bis.2 Los 12 configuradores actuales: qué copiar y qué evitar
+
+Se analizaron Synapse 4, G HUB, iCUE 5, SteelSeries GG, Wootility, Glorious CORE,
+Pulsar, ATK/VGN WebHub, Keychron Launcher, ZSA Oryx, OpenRGB y Piper.
+
+**Los patrones que vamos a copiar:**
+1. **El diagrama es el centro y todo lo demás son paneles alrededor.** El
+   configurador se usa *desde* el ratón, no desde una lista de ajustes.
+2. **Las etapas de DPI como tira horizontal bajo el diagrama**, con la activa
+   resaltada, y **conmutador X/Y separado**. Synapse lo hizo mal: para dejar dos
+   etapas había que desactivar las otras una a una.
+3. **Macros = lista lineal de eventos con pares pulsar/soltar explícitos y
+   retardos editables en línea**, con **modos semánticos de retardo** (*como se
+   grabó / fijo / sin retardos*) en lugar de veinte campos numéricos.
+4. **La semántica de disparo como etiquetas predefinidas** (no repetir / repetir
+   mientras se mantiene / alternar) en vez de lógica montada a mano.
+5. **Feedback de estado siempre.** Es la queja número uno del sector, y en
+   nuestras manos es más grave porque **todavía no sabemos si la escritura
+   funciona**. La interfaz tendrá que decir la verdad: "esto está guardado en
+   local", "esto se ha enviado y no lo podemos confirmar", "esto no se ha tocado".
+   Nada de un "guardado ✓" que no podemos respaldar.
+6. **El ratón funciona al 100 % sin la app.** Ya es nuestro caso.
+7. **Previsualización en vivo**, nunca "configurar a ciegas y rezar".
+8. Export/import de perfiles en **JSON local, sin nube ni cuenta**.
+
+**Lo que evitamos**, con las citas del daño que hacen: cuentas y nube en el camino
+crítico (el modo invitado de Synapse está escondido); bloat y publicidad dentro
+del configurador (SteelSeries instala un secuestrador de audio y un grabador de
+pantalla); **el rendimiento como impuesto** (iCUE consume un 3–5 % de CPU en
+reposo y tarda 30–60 s en dejar el ratón utilizable tras arrancar); rediseños que
+borran funciones sin ganancia; y estado fantasma (*"the wrong profile is displayed
+as being active"*).
+
+### 7.bis.3 Oficio: lo que se aplica al construir
+
+- **Tokens en OKLCH** con una escalera de luminancia para las superficies y
+  **contraste WCAG AA verificado con código** (matrices de Ottosson), no a ojo.
+- **Elevación por luminancia**, no por glassmorphism: en una ventana embebida el
+  `backdrop-filter` sólo cuesta GPU y detrás casi siempre hay nuestra propia app.
+- **Separación de 1 px pintada en el `gap`** del grid en lugar de bordes dobles:
+  evita que los bordes parpadeen al redimensionar en Hyprland.
+- **Tres disposiciones por `grid-template-areas`** (+container queries para el
+  hueco del lienzo, que no es el ancho de la ventana).
+- **Motion con tres duraciones y dos easings**, `prefers-reduced-motion` respetado.
+- El SVG con **`vector-effect: non-scaling-stroke`** para que la línea de 1,5 px
+  siga midiendo 1,5 px a 900 y a 4K.
+
+### 7.bis.4 La app nativa: verificado, no supuesto
+
+`rat9/app.py` existe y se ha **ejecutado**: ventana GTK4 + libadwaita con la
+WebView de WebKitGTK 6.0, sirviendo la interfaz y la API desde el mismo proceso.
+Hallazgos que ahorran depuración:
+
+- **La UI se sirve por HTTP local, no desde `file://`.** Verificado en esta
+  máquina: una página `file://` que hace `fetch()` al servidor local **está
+  bloqueada por WebKit** si el servidor no manda cabecera CORS. Sirviendo por HTTP
+  es mismo origen y el problema no existe.
+- `console-message` **no existe** en WebKitGTK 6.0; el sustituto es
+  `Settings.set_enable_write_console_messages_to_stdout(True)`.
+- `WebView.new_with_settings` tampoco existe (era de GTK3): se pasa `settings=`.
+- El **intérprete tiene que ser `/usr/bin/python3`**: el venv de Hermes no tiene
+  `gi`.
+- `ThreadingHTTPServer` con `daemon_threads=True`, y `shutdown()` **en un hilo
+  aparte** porque bloquea y congelaría el bucle de GTK.
+
 ## 8. Abierto, y con qué evidencia
 
 | Pregunta | Estado |
 |---|---|
-| ¿El R.A.T.9 inalámbrico tiene LEDs controlables por software? | **Sin pruebas.** Ningún índice responde con datos de LED. No se dibuja una pestaña de iluminación hasta tener canal. |
+| ¿El R.A.T.9 inalámbrico tiene LEDs controlables por software? | **RESUELTO: no.** El panel de iluminación del software original era solo para M.M.O.7 y S.T.R.I.K.E.5/7. En el R.A.T.9 los LEDs son fijos por modo. No se dibuja pestaña de iluminación; se muestra el panel de LEDs de DPI como información. |
+| ¿Los cuatro slots son "perfiles" o "niveles de DPI"? | **Ambiguo.** Ver el aviso de §2. Se salda leyendo `0x0074` mientras se pulsa el botón de modo del ratón. |
+| `protocol.DPI_MIN = 100` | **Corregido a la baja: debe ser 25.** El original ajustaba en pasos de 25 y su rango empieza en 25. El slider tiene que ir en múltiplos de 25, no libre. |
+| El parámetro de precisión (aim) | El original usaba **un porcentaje de reducción de sensibilidad, 50 % por defecto**. Hoy tenemos la zona en el diagrama pero no su parámetro: falta exponerlo. |
 | ¿Qué es el registro `0x000B` = `0x0001`? | Desconocido. Se muestra en crudo. |
 | Framing real de escritura del perfil | Documentado (`URB {Length=0x88, Function=0x17}` que traduce el filtro `SaiUsb`), **sin verificar**. Falta cerrar el dispatcher `0x13688-0x14180` o capturar USB con `usbmon`. |
 | Escritura de DPI | Parámetros deducidos del driver de Windows, **sin verificar**. |

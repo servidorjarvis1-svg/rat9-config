@@ -170,9 +170,12 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # silencio
 
-    def _static(self, fn: str, ctype: str):
-        fp = Path(__file__).parent / "web" / fn
-        if not fp.exists():
+    def _static(self, fn: str, ctype: str, subdir: str = "web"):
+        """Sirve un fichero de rat9/<subdir>/. `fn` no puede salirse de ahi."""
+        base = (Path(__file__).parent / subdir).resolve()
+        fp = (base / fn).resolve()
+        # sin esto, "/ui/../../etc/passwd" se sirve tan tranquilo
+        if base not in fp.parents or not fp.is_file():
             self._json({"error": "no encontrado"}, 404)
             return
         body = fp.read_bytes()
@@ -182,6 +185,21 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    MIME = {
+        ".html": "text/html; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".js": "application/javascript; charset=utf-8",
+        ".json": "application/json",
+        ".svg": "image/svg+xml",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".woff2": "font/woff2",
+        ".woff": "font/woff",
+        ".ttf": "font/ttf",
+    }
 
     def query_xml(self):
         from urllib.parse import parse_qs, urlparse
@@ -193,21 +211,19 @@ class Handler(BaseHTTPRequestHandler):
         p = self.path.split("?")[0]
         if p == "/":
             self._json({"ok": True, "ui": "/ui/"})
-        elif p == "/ui/" or p == "/ui/index.html":
-            self._static("index.html", "text/html; charset=utf-8")
+        elif p in ("/ui", "/ui/"):
+            # la interfaz nueva vive en rat9/ui/
+            self._static("index.html", self.MIME[".html"], "ui")
+        elif p.startswith("/ui/"):
+            fn = p[len("/ui/"):]
+            self._static(fn, self.MIME.get(Path(fn).suffix,
+                                           "application/octet-stream"), "ui")
         elif p == "/editor" or p == "/editor/":
             self._json({"ok": True, "ui": "/editor/editor.html"})
         elif p.startswith("/editor/"):
             fn = p[len("/editor/"):]
-            if fn not in ("editor.html", "editor.css", "editor.js",
-                          "index.html", "keys.json"):
-                self._json({"error": "no encontrado"}, 404)
-                return
-            ct = {".html": "text/html; charset=utf-8",
-                  ".css": "text/css; charset=utf-8",
-                  ".js": "application/javascript; charset=utf-8",
-                  ".json": "application/json"}[Path(fn).suffix]
-            self._static(fn, ct)
+            self._static(fn, self.MIME.get(Path(fn).suffix,
+                                           "application/octet-stream"))
         elif p == "/api/state":
             self._json(read_state())
         elif p == "/api/schema":

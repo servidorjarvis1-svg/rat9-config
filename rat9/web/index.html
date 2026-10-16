@@ -130,7 +130,7 @@
       </table>
       <p style="color:var(--muted);font-size:12.5px;margin:14px 0 0">
         Los cuatro perfiles del R.A.T.9 tienen su propio DPI. Cambiarlos requiere
-        <b>escritura</b> en el ratón (root), que aún no está verificada — por eso
+        <b>escritura</b> en el ratón, que aún no está verificada — por eso
         aquí solo se leen.
       </p>
     </div>
@@ -140,7 +140,8 @@
     <h2>Cómo escribir en el ratón</h2>
     <div class="body">
       <div class="note">
-        <b>Enviar un perfil requiere root</b> y toca el ratón. Si el ratón deja de
+        <b>No hace falta root</b>: las reglas udev dan el ratón al grupo
+        <code>rat9</code>. Aun así, enviar un perfil <b>toca el ratón</b>. Si deja de
         responder, <b>desenchúfalo y vuélvelo a enchufar</b>: el firmware nunca
         queda alterado, los bloques son de sesión.
       </div>
@@ -173,7 +174,7 @@ async function refresh() {
       $('batt').textContent = s.battery != null ? s.battery + '%' : '—';
     } else {
       $('dot').className = 'dot off';
-      $('conn').textContent = 'sin acceso (¿sin root?)';
+      $('conn').textContent = 'sin acceso al ratón';
       $('prof').textContent = $('batt').textContent = '—';
       renderDpi({});
     }
@@ -216,7 +217,7 @@ function renderDpi(s) {
   const tb = document.querySelector('#dpitable tbody');
   if (!s.dpi || !s.dpi.length) {
     tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">'
-      + 'sin acceso al ratón (¿sin root?)</td></tr>';
+      + 'sin acceso al ratón (¿están instaladas las reglas udev?)</td></tr>';
     return;
   }
   const rows = {};
@@ -229,8 +230,8 @@ function renderDpi(s) {
       <td>${r.mode}${active ? ' ●' : ''}</td>
       <td>${x.dpi ?? '—'}</td>
       <td>${y.dpi ?? '—'}</td>
-      <td><span class="tag ${chg ? 'changed' : 'factory'}">`
-        + (chg ? 'modificado' : 'fábrica') + '</span></td></tr>`;
+      <td><span class="tag ${chg ? 'changed' : 'factory'}">${
+        chg ? 'modificado' : 'fábrica'}</span></td></tr>`;
   }).join('');
 }
 
