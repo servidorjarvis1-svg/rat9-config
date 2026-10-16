@@ -60,38 +60,36 @@ def mascara(arr: np.ndarray, umbral: float = UMBRAL) -> np.ndarray:
     return m
 
 
-def contornos(m: np.ndarray, min_corrida: int = 10) -> dict[int, tuple[int, int]]:
-    """Borde EXTERIOR del raton en cada fila: el primer y el ultimo pixel.
+def contornos(m: np.ndarray, min_corrida: int = 10,
+              cierre: int = 28) -> dict[int, tuple[int, int]]:
+    """Borde EXTERIOR del raton en cada fila: donde empieza y donde acaba.
 
-    Deliberadamente NO se busca "la mancha mas grande" ni se rellenan huecos.
-    El raton es oscuro sobre fondo oscuro y sus propias bandas internas se
-    confunden con el fondo, asi que la mascara sale agujereada. Pero para trazar
-    el contorno eso da igual: lo unico que hace falta es donde EMPIEZA y donde
-    ACABA el objeto en cada fila, y eso se mide entrando desde fuera hacia
-    dentro, que es inmune a los agujeros de dentro.
+    El truco esta en el CIERRE. En cada fila, el raton no sale como una mancha
+    continua: sus propias bandas oscuras se confunden con el fondo y la mascara
+    sale agujereada, asi que la fila son varios trozos separados. Y ademas hay
+    marcas sueltas por el fondo (brillos, bordes del fotograma).
 
-    `min_corrida` alto a proposito: junto al flanco izquierdo hay una sombra
-    suelta y, con corridas cortas, el contorno saltaba a ella y el raton salia
-    mas ancho de lo que es en esa zona.
+    Por eso: se juntan los trozos separados por menos de `cierre` px (los
+    agujeros de dentro del raton son pequeños) y se toma el bloque MAYOR, que es
+    el raton; asi las marcas sueltas del fondo se quedan fuera sin necesidad de
+    umbrales finos. Entrar desde fuera hacia dentro trozo a trozo no bastaba:
+    el primer trozo podia ser una marca del fondo.
     """
     salida = {}
     alto, ancho = m.shape
     for y in range(alto):
         fila = m[y]
-        izq = der = None
-        for x in range(0, ancho - min_corrida):
-            if fila[x:x + min_corrida].all():
-                izq = x
-                break
-        if izq is None:
+        idx = np.flatnonzero(fila)
+        if idx.size < min_corrida:
             continue
-        for x in range(ancho - 1, min_corrida, -1):
-            if fila[x - min_corrida + 1:x + 1].all():
-                der = x
-                break
-        if der is None or der - izq < min_corrida:
-            continue
-        salida[y] = (izq, der)
+        # bloques = trozos con los huecos pequeños ya cerrados
+        cortes = np.flatnonzero(np.diff(idx) > cierre)
+        inicio = np.concatenate(([0], cortes + 1))
+        fin = np.concatenate((cortes, [idx.size - 1]))
+        bloques = [(int(idx[a]), int(idx[b])) for a, b in zip(inicio, fin)]
+        a, b = max(bloques, key=lambda t: t[1] - t[0])
+        if b - a >= min_corrida:
+            salida[y] = (a, b)
     return salida
 
 
