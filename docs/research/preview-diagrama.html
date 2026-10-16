@@ -1,0 +1,254 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<title>Diagrama R.A.T.9 — preview</title>
+<style>
+  :root { --bg:#0a0d13; --panel:#111621; --line:#232d3d; --ink:#dce6f2;
+           --muted:#7e8ea6; --accent:#4aa8ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:14px/1.5 ui-sans-serif,system-ui,sans-serif; display:flex;
+    gap:20px; padding:20px; }
+  .stage { background:radial-gradient(120% 80% at 50% 0%, #131a26 0%, var(--bg) 70%);
+    border:1px solid var(--line); border-radius:12px; flex:1;
+    display:grid; place-items:center; padding:16px; height:700px; }
+  aside { width:290px; display:flex; flex-direction:column; gap:12px; }
+  h1 { font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 4px; }
+  .card { border:1px solid var(--line); border-radius:10px; padding:14px;
+    background:var(--panel); }
+  .row { display:flex; justify-content:space-between; font-size:12.5px;
+    padding:5px 0; border-bottom:1px solid #1a2130; }
+  .row:last-child { border:0; }
+  .row b { color:var(--accent); font-variant-numeric:tabular-nums; }
+</style></head><body>
+<div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 620" width="100%" height="100%" style="max-height:74vh"
+     class="mouse-diagram" role="img"
+     aria-label="Diagrama del Mad Catz R.A.T.9, vista superior esquemática">
+<title>R.A.T.9 — diagrama de controles</title>
+<style>
+  .mouse-diagram {
+    --shell:      #161b25;
+    --shell-hi:   #212a38;
+    --shell-edge: #38455c;
+    --plate:      #1c2330;
+    --plate-hi:   #28323f;
+    --flank:      #11151d;
+    --recess:     #0b0e14;
+    --ridge:      #46536b;
+    --metal:      #6b7788;
+    --accent:     #4aa8ff;
+    --accent-dim: rgba(74,168,255,.35);
+    --ink:        #8fa3bf;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .mouse-diagram .z { cursor: pointer; transition: fill .16s ease, filter .16s ease; }
+  .mouse-diagram .z:hover { filter: brightness(1.45); }
+  .mouse-diagram .z:focus-visible { outline: none; }
+  .mouse-diagram .z:focus-visible .hit { stroke: var(--accent); stroke-width: 2.5; }
+  .mouse-diagram .z.sel { filter: brightness(1.3); }
+  .mouse-diagram .z.sel .hit { stroke: var(--accent); stroke-width: 2.5; }
+  .mouse-diagram .hit { fill: none; }
+  .mouse-diagram .lbl { fill: var(--ink); font-size: 10px; letter-spacing: .06em; }
+  .mouse-diagram .lbl-b { fill: var(--accent); font-size: 9.5px; }
+  .mouse-diagram .lead { stroke: var(--shell-edge); stroke-width: 1; fill: none; }
+  .mouse-diagram .lead.on { stroke: var(--accent); stroke-width: 1.4; }
+</style>
+
+<defs>
+  <linearGradient id="g-shell" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%"   stop-color="var(--shell-hi)"/>
+    <stop offset="55%"  stop-color="var(--shell)"/>
+    <stop offset="100%" stop-color="var(--shell)"/>
+  </linearGradient>
+  <linearGradient id="g-plate" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="var(--plate-hi)"/>
+    <stop offset="100%" stop-color="var(--plate)"/>
+  </linearGradient>
+  <linearGradient id="g-flank" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"   stop-color="var(--recess)"/>
+    <stop offset="100%" stop-color="var(--flank)"/>
+  </linearGradient>
+</defs>
+
+<!-- ═══ 1. base / casco ══════════════════════════════════════════════════ -->
+<g id="layer-shell">
+  <path id="shell" d="M 132 52
+    C 152 34 176 28 200 28
+    C 224 28 248 34 268 52
+    C 292 72 306 106 312 142
+    C 318 200 322 262 322 322
+    C 322 380 318 426 306 476
+    C 298 512 286 538 268 552
+    C 250 570 228 584 205 584
+    C 180 584 158 572 142 554
+    C 128 538 120 522 116 506
+    L 96 488
+    L 62 452
+    L 42 408
+    L 56 348
+    L 92 296
+    C 96 258 100 200 106 158
+    C 110 116 118 84 132 52 Z"
+    fill="url(#g-shell)" stroke="var(--shell-edge)" stroke-width="1.5"/>
+</g>
+
+<!-- ═══ 2. reposamanos ═══════════════════════════════════════════════════ -->
+<g id="layer-palm">
+  <path d="M 134 286
+    C 180 264 220 264 266 286
+    C 292 340 302 410 298 462
+    C 292 522 268 558 240 570
+    C 226 578 214 582 205 582
+    C 190 582 174 576 158 568
+    C 130 552 108 516 102 462
+    C 98 410 108 340 134 286 Z"
+    fill="var(--plate)" stroke="var(--shell-edge)" stroke-width="1.2" opacity=".85"/>
+  <path d="M 132 300 C 168 286 242 286 268 300" fill="none"
+        stroke="var(--shell-edge)" stroke-width="1" opacity=".5"/>
+  <!-- escala de ajuste del reposamanos, como en el original -->
+  <g stroke="var(--ridge)" stroke-width="1" opacity=".55">
+    <line x1="150" y1="330" x2="258" y2="330"/>
+    <line x1="156" y1="352" x2="252" y2="352"/>
+    <line x1="166" y1="374" x2="242" y2="374"/>
+  </g>
+</g>
+
+<!-- ═══ 3. banda lateral izquierda (superficie donde vive el pulgar) ═══ -->
+<g id="layer-flank">
+  <path d="M 108 162 L 98 292 L 56 348 L 42 408 L 62 452 L 96 488 L 118 506
+           L 138 486 L 118 462 L 92 430 L 76 400 L 88 344 L 122 292 L 132 166 Z"
+    fill="url(#g-flank)" stroke="var(--shell-edge)" stroke-width="1.2"/>
+</g>
+
+<!-- ═══ 4. botones principales (los dos grandes) ════════════════════════ -->
+<g id="layer-plates">
+  <g class="z" data-zone="btn-left" data-usage="1" tabindex="0" role="button"
+     aria-label="Botón izquierdo">
+    <path class="hit" d="M 200 34 C 178 34 156 40 140 56 C 122 92 112 150 110 200
+      C 108 228 110 250 116 268 L 134 288 C 158 276 180 264 200 258 Z"
+      fill="url(#g-plate)" stroke="var(--shell-edge)" stroke-width="1.3"/>
+  </g>
+  <g class="z" data-zone="btn-right" data-usage="2" tabindex="0" role="button"
+     aria-label="Botón derecho">
+    <path class="hit" d="M 200 34 C 222 34 244 40 260 56 C 278 92 288 150 290 200
+      C 292 228 290 250 284 268 L 266 288 C 242 276 220 264 200 258 Z"
+      fill="url(#g-plate)" stroke="var(--shell-edge)" stroke-width="1.3"/>
+  </g>
+</g>
+
+<!-- ═══ 5. canal de la rueda + rueda central ════════════════════════════ -->
+<g id="layer-wheel">
+  <path d="M 178 62 L 222 62 C 226 62 228 66 228 72 L 228 172
+           C 228 178 226 182 222 182 L 178 182 C 174 182 172 178 172 172
+           L 172 72 C 172 66 174 62 178 62 Z"
+        fill="var(--recess)" stroke="var(--shell-edge)" stroke-width="1.2"/>
+  <g class="z" data-zone="btn-scroll" data-usage="3" tabindex="0" role="button"
+     aria-label="Botón de la rueda (clic central)">
+    <rect class="hit" x="178" y="70" width="44" height="104" rx="16"
+          fill="var(--plate)" stroke="var(--ridge)" stroke-width="1.2"/>
+    <g stroke="var(--ridge)" stroke-width="1.6" opacity=".8">
+      <line x1="184" y1="88"  x2="216" y2="88"/>
+      <line x1="184" y1="102" x2="216" y2="102"/>
+      <line x1="184" y1="116" x2="216" y2="116"/>
+      <line x1="184" y1="130" x2="216" y2="130"/>
+      <line x1="184" y1="144" x2="216" y2="144"/>
+      <line x1="184" y1="158" x2="216" y2="158"/>
+    </g>
+  </g>
+</g>
+
+<!-- ═══ 6. inset de precisión (sniper), flanco izquierdo ════════════════ -->
+<g id="layer-precision">
+  <g class="z" data-zone="btn-precision" data-usage="8" tabindex="0" role="button"
+     aria-label="Botón de precisión">
+    <path class="hit" d="M 112 124 L 138 130 L 132 250 L 104 244 Z"
+          fill="var(--recess)" stroke="var(--metal)" stroke-width="1.3"/>
+    <line x1="118" y1="136" x2="128" y2="238" stroke="var(--metal)"
+          stroke-width="1" opacity=".45"/>
+  </g>
+</g>
+
+<!-- ═══ 7. botones laterales: adelante / atrás ══════════════════════════ -->
+<g id="layer-side">
+  <g class="z" data-zone="btn-forward" data-usage="5" tabindex="0" role="button"
+     aria-label="Botón lateral adelante">
+    <path class="hit" d="M 106 260 L 138 268 L 132 322 L 100 314 Z"
+          fill="var(--metal)" stroke="var(--ridge)" stroke-width="1.2"/>
+  </g>
+  <g class="z" data-zone="btn-back" data-usage="4" tabindex="0" role="button"
+     aria-label="Botón lateral atrás">
+    <path class="hit" d="M 98 326 L 130 334 L 124 386 L 92 378 Z"
+          fill="var(--metal)" stroke="var(--ridge)" stroke-width="1.2"/>
+  </g>
+</g>
+
+<!-- ═══ 8. rueda del pulgar (dos sentidos) ══════════════════════════════ -->
+<g id="layer-thumbwheel">
+  <g class="z" data-zone="thumb-cw" data-usage="6" tabindex="0" role="button"
+     aria-label="Rueda del pulgar, un sentido">
+    <path class="hit" d="M 84 398 L 122 408 L 116 452 L 78 442 Z"
+          fill="var(--plate)" stroke="var(--ridge)" stroke-width="1.2"/>
+  </g>
+  <g class="z" data-zone="thumb-ccw" data-usage="7" tabindex="0" role="button"
+     aria-label="Rueda del pulgar, otro sentido">
+    <path class="hit" d="M 78 372 L 116 382 L 122 408 L 84 398 Z"
+          fill="var(--plate)" stroke="var(--ridge)" stroke-width="1.2"/>
+  </g>
+  <g stroke="var(--ridge)" stroke-width="1.1" opacity=".7">
+    <line x1="80" y1="386" x2="118" y2="395"/>
+    <line x1="82" y1="400" x2="120" y2="409"/>
+    <line x1="80" y1="414" x2="118" y2="423"/>
+    <line x1="79" y1="428" x2="117" y2="437"/>
+  </g>
+</g>
+
+<!-- ═══ 9. botones de perfil (Mode 1/2/3) ═══════════════════════════════ -->
+<g id="layer-modes">
+  <g class="z" data-zone="mode-1" data-usage="9" tabindex="0" role="button"
+     aria-label="Botón de perfil 1">
+    <rect class="hit" x="150" y="398" width="26" height="20" rx="4"
+          fill="var(--plate)" stroke="var(--shell-edge)" stroke-width="1.2"/>
+  </g>
+  <g class="z" data-zone="mode-2" data-usage="10" tabindex="0" role="button"
+     aria-label="Botón de perfil 2">
+    <rect class="hit" x="150" y="426" width="26" height="20" rx="4"
+          fill="var(--plate)" stroke="var(--shell-edge)" stroke-width="1.2"/>
+  </g>
+  <g class="z" data-zone="mode-3" data-usage="11" tabindex="0" role="button"
+     aria-label="Botón de perfil 3">
+    <rect class="hit" x="150" y="454" width="26" height="20" rx="4"
+          fill="var(--plate)" stroke="var(--shell-edge)" stroke-width="1.2"/>
+  </g>
+  <g class="lbl" text-anchor="middle" font-size="8">
+    <text x="163" y="412">1</text><text x="163" y="440">2</text><text x="163" y="468">3</text>
+  </g>
+</g>
+
+<!-- ═══ 10. etiquetas y guías ═══════════════════════════════════════════ -->
+<g id="layer-labels">
+  <path class="lead" d="M 138 200 L 348 132"/>
+  <text class="lbl" x="352" y="128">PRECISIÓN</text>
+  <path class="lead" d="M 116 286 L 348 224"/>
+  <text class="lbl" x="352" y="220">ADELANTE</text>
+  <path class="lead" d="M 108 352 L 348 300"/>
+  <text class="lbl" x="352" y="296">ATRÁS</text>
+  <path class="lead" d="M 96 410 L 348 376"/>
+  <text class="lbl" x="352" y="372">RUEDA PULGAR</text>
+  <path class="lead" d="M 176 412 L 30 470"/>
+  <text class="lbl" x="6" y="486">PERFILES</text>
+  <path class="lead" d="M 200 96 L 348 52"/>
+  <text class="lbl" x="352" y="48">RUEDA</text>
+</g>
+</svg>
+</div>
+<aside>
+  <h1>R.A.T.9</h1>
+  <div class="card">
+    <div class="row"><span>Perfil activo</span><b>1</b></div>
+    <div class="row"><span>Bateria</span><b>96 %</b></div>
+    <div class="row"><span>DPI</span><b>800</b></div>
+    <div class="row"><span>Zonas</span><b>11</b></div>
+  </div>
+  <div class="card" style="font-size:12px;color:var(--muted)">
+    Prueba de forma: se lee como un R.A.T.9 desde arriba? Zonas con hover y foco.
+  </div>
+</aside></body></html>

@@ -9,3 +9,6 @@ docs/hardware-ref/*.jpg
 docs/hardware-ref/*.png
 docs/hardware-ref/*.jpeg
 docs/hardware-ref/*.webp
+
+# Renders de verificacion del diagrama (se regeneran con tools/svg-render.py)
+docs/research/shots/
